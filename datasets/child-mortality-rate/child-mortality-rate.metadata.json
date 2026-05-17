@@ -1,0 +1,40 @@
+{
+  "chart": {
+    "title": "Child mortality rate",
+    "subtitle": "Share of newborns who die before reaching the age of 5.",
+    "citation": "UN, World Population Prospects (2024)",
+    "originalChartUrl": "https://ourworldindata.org/explorers/population-and-demography?indicator=Child+mortality+rate&Sex=Both+sexes&Age=Under+5+years&Projection+scenario=None&country=CHN~IND~USA~IDN~PAK~NGA~BRA~JPN",
+    "selection": [
+      "China",
+      "India",
+      "United States",
+      "Indonesia",
+      "Pakistan",
+      "Nigeria",
+      "Brazil",
+      "Japan"
+    ]
+  },
+  "columns": {
+    "Child mortality rate - Sex: all - Variant: estimates": {
+      "titleShort": "Child mortality rate",
+      "titleLong": "Child mortality rate - UN WPP",
+      "descriptionShort": "The share of children who die before reaching the age of 5.",
+      "descriptionKey": [
+        "This is the *probability* a newborn would die before reaching the age of five if the year's age-specific mortality rates stayed unchanged. It is not the share of an actual cohort that has been observed dying."
+      ],
+      "descriptionProcessing": "The UN publishes infant and under-five mortality as deaths per 1,000 live births. We divide by 10 to express the values as a percentage of newborns.",
+      "unit": "% of children",
+      "timespan": "1950-2023",
+      "type": "Numeric",
+      "owidVariableId": 950974,
+      "shortName": "mortality_rate__sex_all__age_0_4__variant_estimates",
+      "lastUpdated": "2024-07-12",
+      "citationShort": "UN, World Population Prospects (2024) – processed by Our World in Data",
+      "citationLong": "UN, World Population Prospects (2024) – processed by Our World in Data. “Child mortality rate – UN WPP” [dataset]. United Nations, “World Population Prospects”; United Nations, “World Population Prospects - Interim Update” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/950974.metadata.json"
+    }
+  },
+  "dateDownloaded": "2026-05-17",
+  "activeFilters": {}
+}

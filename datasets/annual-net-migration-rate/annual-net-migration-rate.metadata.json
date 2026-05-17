@@ -1,0 +1,40 @@
+{
+  "chart": {
+    "title": "Annual net migration rate",
+    "subtitle": "Total number of immigrants minus the number of emigrants, per 1,000 people in the population. Positive values mean more people moved in than out.",
+    "citation": "UN, World Population Prospects (2024)",
+    "originalChartUrl": "https://ourworldindata.org/explorers/population-and-demography?indicator=Net+migration+rate&Sex=Both+sexes&Age=Total&Projection+scenario=None&country=CHN~IND~USA~IDN~PAK~NGA~BRA~JPN",
+    "selection": [
+      "China",
+      "India",
+      "United States",
+      "Indonesia",
+      "Pakistan",
+      "Nigeria",
+      "Brazil",
+      "Japan"
+    ]
+  },
+  "columns": {
+    "Annual net migration rate - Sex: all - Age: all - Variant: estimates": {
+      "titleShort": "Annual net migration rate",
+      "titleLong": "Annual net migration rate - UN WPP",
+      "descriptionShort": "The number of immigrants minus the number of emigrants, per 1,000 people in the population. Positive values mean more people moved into the country than left it.",
+      "descriptionKey": [
+        "Net migration is the most uncertain component of population change — flows are volatile and historical data is patchy. The UN balances country values so global net migration each year sums to zero.",
+        "Expressing migration per 1,000 people makes it comparable across countries of very different sizes."
+      ],
+      "unit": "migrants per 1,000 people",
+      "timespan": "1950-2023",
+      "type": "Numeric",
+      "owidVariableId": 950963,
+      "shortName": "net_migration_rate__sex_all__age_all__variant_estimates",
+      "lastUpdated": "2024-07-12",
+      "citationShort": "UN, World Population Prospects (2024) – processed by Our World in Data",
+      "citationLong": "UN, World Population Prospects (2024) – processed by Our World in Data. “Annual net migration rate – UN WPP” [dataset]. United Nations, “World Population Prospects”; United Nations, “World Population Prospects - Interim Update” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/950963.metadata.json"
+    }
+  },
+  "dateDownloaded": "2026-05-17",
+  "activeFilters": {}
+}

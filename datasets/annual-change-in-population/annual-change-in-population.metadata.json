@@ -1,0 +1,40 @@
+{
+  "chart": {
+    "subtitle": "",
+    "note": "",
+    "citation": "UN, World Population Prospects (2024)",
+    "originalChartUrl": "https://ourworldindata.org/explorers/population-and-demography?indicator=Annual+population+change&Sex=Both+sexes&Age=Total&Projection+scenario=None&country=CHN~IND~USA~IDN~PAK~NGA~BRA~JPN",
+    "selection": [
+      "China",
+      "India",
+      "United States",
+      "Indonesia",
+      "Pakistan",
+      "Nigeria",
+      "Brazil",
+      "Japan"
+    ]
+  },
+  "columns": {
+    "Population change - Sex: all - Age: all - Variant: estimates": {
+      "titleShort": "Annual change in population",
+      "titleLong": "Annual change in population - UN WPP",
+      "descriptionShort": "Annual change in population, calculated as the difference between population on 1 July of consecutive years.",
+      "descriptionKey": [
+        "This is the *net* change in population. It reflects births, deaths, and migration combined. To see only the contribution of births and deaths, look at the [natural population growth rate](https://ourworldindata.org/grapher/natural-population-growth)."
+      ],
+      "descriptionProcessing": "We compute population change as the difference between the population in two consecutive years, using the UN's published population counts.",
+      "unit": "people",
+      "timespan": "1951-2023",
+      "type": "Integer",
+      "owidVariableId": 951675,
+      "shortName": "population_change__sex_all__age_all__variant_estimates",
+      "lastUpdated": "2024-07-12",
+      "citationShort": "UN, World Population Prospects (2024) – processed by Our World in Data",
+      "citationLong": "UN, World Population Prospects (2024) – processed by Our World in Data. “Annual change in population – UN WPP” [dataset]. United Nations, “World Population Prospects”; United Nations, “World Population Prospects - Interim Update” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/951675.metadata.json"
+    }
+  },
+  "dateDownloaded": "2026-05-17",
+  "activeFilters": {}
+}

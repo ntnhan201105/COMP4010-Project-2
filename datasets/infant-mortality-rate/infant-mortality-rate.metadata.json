@@ -1,0 +1,40 @@
+{
+  "chart": {
+    "title": "Infant mortality rate",
+    "subtitle": "Share of newborns who die before reaching the age of 1.",
+    "citation": "UN, World Population Prospects (2024)",
+    "originalChartUrl": "https://ourworldindata.org/explorers/population-and-demography?indicator=Infant+mortality+rate&Sex=Both+sexes&Age=Under+1+year&Projection+scenario=None&country=CHN~IND~USA~IDN~PAK~NGA~BRA~JPN",
+    "selection": [
+      "China",
+      "India",
+      "United States",
+      "Indonesia",
+      "Pakistan",
+      "Nigeria",
+      "Brazil",
+      "Japan"
+    ]
+  },
+  "columns": {
+    "Infant mortality rate - Sex: all - Variant: estimates": {
+      "titleShort": "Infant mortality rate",
+      "titleLong": "Infant mortality rate - UN WPP",
+      "descriptionShort": "The share of newborns who die before reaching the age of one.",
+      "descriptionKey": [
+        "This is the *probability* a newborn would die before reaching the age of one if the year's age-specific mortality rates stayed unchanged. It is not the share of an actual cohort that has been observed dying."
+      ],
+      "descriptionProcessing": "The UN publishes infant and under-five mortality as deaths per 1,000 live births. We divide by 10 to express the values as a percentage of newborns.",
+      "unit": "% of infants",
+      "timespan": "1950-2023",
+      "type": "Numeric",
+      "owidVariableId": 950970,
+      "shortName": "mortality_rate__sex_all__age_0__variant_estimates",
+      "lastUpdated": "2024-07-12",
+      "citationShort": "UN, World Population Prospects (2024) – processed by Our World in Data",
+      "citationLong": "UN, World Population Prospects (2024) – processed by Our World in Data. “Infant mortality rate – UN WPP” [dataset]. United Nations, “World Population Prospects”; United Nations, “World Population Prospects - Interim Update” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/950970.metadata.json"
+    }
+  },
+  "dateDownloaded": "2026-05-17",
+  "activeFilters": {}
+}

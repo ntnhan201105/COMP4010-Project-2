@@ -1,0 +1,39 @@
+{
+  "chart": {
+    "subtitle": "Annual number of live births per 1,000 people in the total population.",
+    "citation": "UN, World Population Prospects (2024)",
+    "originalChartUrl": "https://ourworldindata.org/explorers/population-and-demography?indicator=Birth+rate&Sex=Both+sexes&Age=Total&Projection+scenario=None&country=CHN~IND~USA~IDN~PAK~NGA~BRA~JPN",
+    "selection": [
+      "China",
+      "India",
+      "United States",
+      "Indonesia",
+      "Pakistan",
+      "Nigeria",
+      "Brazil",
+      "Japan"
+    ]
+  },
+  "columns": {
+    "Birth rate - Sex: all - Age: all - Variant: estimates": {
+      "titleShort": "Birth rate",
+      "titleLong": "Birth rate - UN WPP",
+      "descriptionShort": "The number of live births in a year per 1,000 people in the population.",
+      "descriptionKey": [
+        "This is a *crude* birth rate — it is not adjusted for differences in age structure, so countries with younger populations tend to show higher rates even when individual women have the same number of children.",
+        "We also publish a [long-run birth rate indicator](https://ourworldindata.org/grapher/long-run-birth-rate) covering earlier years."
+      ],
+      "unit": "births per 1,000 people",
+      "timespan": "1950-2023",
+      "type": "Numeric",
+      "owidVariableId": 950617,
+      "shortName": "birth_rate__sex_all__age_all__variant_estimates",
+      "lastUpdated": "2024-07-12",
+      "citationShort": "UN, World Population Prospects (2024) – processed by Our World in Data",
+      "citationLong": "UN, World Population Prospects (2024) – processed by Our World in Data. “Birth rate – UN WPP” [dataset]. United Nations, “World Population Prospects”; United Nations, “World Population Prospects - Interim Update” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/950617.metadata.json"
+    }
+  },
+  "dateDownloaded": "2026-05-17",
+  "activeFilters": {}
+}

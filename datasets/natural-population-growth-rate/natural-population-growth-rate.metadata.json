@@ -1,0 +1,40 @@
+{
+  "chart": {
+    "subtitle": "Annual population change determined by births and deaths. Migration is not included.",
+    "citation": "UN, World Population Prospects (2024)",
+    "originalChartUrl": "https://ourworldindata.org/explorers/population-and-demography?indicator=Natural+population+growth+rate&Sex=Both+sexes&Age=Total&Projection+scenario=None&country=CHN~IND~USA~IDN~PAK~NGA~BRA~JPN",
+    "selection": [
+      "China",
+      "India",
+      "United States",
+      "Indonesia",
+      "Pakistan",
+      "Nigeria",
+      "Brazil",
+      "Japan"
+    ]
+  },
+  "columns": {
+    "Natural population growth rate - Sex: all - Age: all - Variant: estimates": {
+      "titleShort": "Natural population growth rate",
+      "titleLong": "Natural population growth rate - UN WPP",
+      "descriptionShort": "Births minus deaths, as a share of the population. This is the part of population change that comes only from births and deaths, ignoring migration.",
+      "descriptionKey": [
+        "Migration is *not* included. To see how births, deaths, and migration combine, look at the [overall population growth rate](https://ourworldindata.org/grapher/population-growth-rates)."
+      ],
+      "descriptionProcessing": "The UN publishes the rate of natural change per 1,000 people. We divide by 10 to express it as a percentage.",
+      "shortUnit": "%",
+      "unit": "%",
+      "timespan": "1950-2023",
+      "type": "Numeric",
+      "owidVariableId": 950978,
+      "shortName": "natural_change_rate__sex_all__age_all__variant_estimates",
+      "lastUpdated": "2024-07-12",
+      "citationShort": "UN, World Population Prospects (2024) – processed by Our World in Data",
+      "citationLong": "UN, World Population Prospects (2024) – processed by Our World in Data. “Natural population growth rate – UN WPP” [dataset]. United Nations, “World Population Prospects”; United Nations, “World Population Prospects - Interim Update” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/950978.metadata.json"
+    }
+  },
+  "dateDownloaded": "2026-05-17",
+  "activeFilters": {}
+}

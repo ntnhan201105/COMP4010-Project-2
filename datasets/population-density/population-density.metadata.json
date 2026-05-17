@@ -1,0 +1,37 @@
+{
+  "chart": {
+    "title": "Population density",
+    "subtitle": "Number of people per km² of land area.",
+    "citation": "UN, World Population Prospects (2024)",
+    "originalChartUrl": "https://ourworldindata.org/explorers/population-and-demography?indicator=Population+density&Sex=Both+sexes&Age=Total&Projection+scenario=None&country=CHN~IND~USA~IDN~PAK~NGA~BRA~JPN",
+    "selection": [
+      "China",
+      "India",
+      "United States",
+      "Indonesia",
+      "Pakistan",
+      "Nigeria",
+      "Brazil",
+      "Japan"
+    ]
+  },
+  "columns": {
+    "Population density - Sex: all - Age: all - Variant: estimates": {
+      "titleShort": "Population density",
+      "titleLong": "Population density - UN WPP",
+      "descriptionShort": "The number of people per square kilometre of land area.",
+      "shortUnit": "people/km²",
+      "unit": "people per square kilometer",
+      "timespan": "1950-2023",
+      "type": "Numeric",
+      "owidVariableId": 953893,
+      "shortName": "population_density__sex_all__age_all__variant_estimates",
+      "lastUpdated": "2024-07-12",
+      "citationShort": "UN, World Population Prospects (2024) – processed by Our World in Data",
+      "citationLong": "UN, World Population Prospects (2024) – processed by Our World in Data. “Population density – UN WPP” [dataset]. United Nations, “World Population Prospects”; United Nations, “World Population Prospects - Interim Update” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/953893.metadata.json"
+    }
+  },
+  "dateDownloaded": "2026-05-17",
+  "activeFilters": {}
+}
