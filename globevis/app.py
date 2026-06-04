@@ -20,6 +20,65 @@ if os.path.exists(history_path):
     with open(history_path, "r", encoding="utf-8") as f:
         history_db = json.load(f)
 
+# --- Precompute DeckGL Data ---
+print("Precomputing DeckGL color payloads...")
+precomputed_payloads = {
+    "life_expectancy": {},
+    "fertility_rate": {},
+    "net_migration": {}
+}
+
+for year in range(min_year, max_year + 1):
+    df_year = df_full[df_full['year'] == year].copy()
+    
+    # Life Expectancy
+    df_le = df_year.copy()
+    df_le['raw_value'] = df_le['lifeExp']
+    t_le = ((df_le['lifeExp'].clip(40, 85) - 40) / 45).values
+    t2_le  = np.clip(t_le * 2, 0, 1)
+    t2h_le = np.clip((t_le - 0.5) * 2, 0, 1)
+    r_le = np.where(t_le < 0.5, 239 + (251 - 239) * t2_le,  251 + ( 16 - 251) * t2h_le)
+    g_le = np.where(t_le < 0.5,  68 + (191 -  68) * t2_le,  191 + (217 - 191) * t2h_le)
+    b_le = np.where(t_le < 0.5,  68 + ( 36 -  68) * t2_le,   36 + (122 -  36) * t2h_le)
+    df_le['color_r'] = r_le.astype(int)
+    df_le['color_g'] = g_le.astype(int)
+    df_le['color_b'] = b_le.astype(int)
+    df_le['elevation'] = 0
+    precomputed_payloads["life_expectancy"][year] = df_le[['country', 'iso_alpha', 'longitude', 'latitude', 'elevation', 'color_r', 'color_g', 'color_b', 'pop', 'raw_value']].to_dict(orient="records")
+
+    # Fertility Rate
+    df_fr = df_year.copy()
+    df_fr['raw_value'] = df_fr['fertility_rate']
+    t_fr = ((df_fr['fertility_rate'].clip(1, 7) - 1) / 6).values
+    t2_fr  = np.clip(t_fr * 2, 0, 1)
+    t2h_fr = np.clip((t_fr - 0.5) * 2, 0, 1)
+    r_fr = np.where(t_fr < 0.5,   6 + (139 -   6) * t2_fr,  139 + (240 - 139) * t2h_fr)
+    g_fr = np.where(t_fr < 0.5, 200 + ( 63 - 200) * t2_fr,   63 + ( 36 -  63) * t2h_fr)
+    b_fr = np.where(t_fr < 0.5, 240 + (245 - 240) * t2_fr,  245 + (160 - 245) * t2h_fr)
+    df_fr['color_r'] = r_fr.astype(int)
+    df_fr['color_g'] = g_fr.astype(int)
+    df_fr['color_b'] = b_fr.astype(int)
+    df_fr['elevation'] = 0
+    precomputed_payloads["fertility_rate"][year] = df_fr[['country', 'iso_alpha', 'longitude', 'latitude', 'elevation', 'color_r', 'color_g', 'color_b', 'pop', 'raw_value']].to_dict(orient="records")
+
+    # Net Migration
+    df_nm = df_year.copy()
+    df_nm['raw_value'] = df_nm['net_migration']
+    mag_nm = df_nm['net_migration'].abs()
+    intensity_nm = np.log1p(mag_nm) / np.log1p(100000)
+    intensity_nm = np.clip(intensity_nm, 0, 1).values
+    sign_nm = np.sign(df_nm['net_migration']).values
+    r_nm = np.where(sign_nm < 0, 22 + (240 - 22) * intensity_nm, 22 + (  0 - 22) * intensity_nm)
+    g_nm = np.where(sign_nm < 0, 32 + ( 40 - 32) * intensity_nm, 32 + (210 - 32) * intensity_nm)
+    b_nm = np.where(sign_nm < 0, 52 + ( 60 - 52) * intensity_nm, 52 + (255 - 52) * intensity_nm)
+    df_nm['color_r'] = r_nm.astype(int)
+    df_nm['color_g'] = g_nm.astype(int)
+    df_nm['color_b'] = b_nm.astype(int)
+    df_nm['elevation'] = 0
+    precomputed_payloads["net_migration"][year] = df_nm[['country', 'iso_alpha', 'longitude', 'latitude', 'elevation', 'color_r', 'color_g', 'color_b', 'pop', 'raw_value']].to_dict(orient="records")
+
+print("Finished precomputing payloads.")
+
 
 # --- Dashboard UI Definition ---
 app_ui = ui.page_navbar(
@@ -303,95 +362,81 @@ def server(input, output, session):
     async def send_deck_data():
         year = input.timeline_year()
         indicator = input.indicator()
-        df_year = df_full[df_full['year'] == year].copy()
-
-        if indicator == "life_expectancy":
-            df_year['raw_value'] = df_year['lifeExp']
-            t = ((df_year['lifeExp'].clip(40, 85) - 40) / 45).values
-
-            # 3-stop gradient: vivid red -> warm amber -> bright emerald
-            # Routing through amber avoids the muddy RGB midpoint between red & green
-            # Stop 0 (t=0.0): #ef4444  (239,  68,  68) -- vibrant red
-            # Stop 1 (t=0.5): #fbbf24  (251, 191,  36) -- warm amber
-            # Stop 2 (t=1.0): #10d97a  ( 16, 217, 122) -- bright emerald
-            t2  = np.clip(t * 2, 0, 1)           # 0->1 for first half
-            t2h = np.clip((t - 0.5) * 2, 0, 1)  # 0->1 for second half
-
-            r = np.where(t < 0.5, 239 + (251 - 239) * t2,  251 + ( 16 - 251) * t2h)
-            g = np.where(t < 0.5,  68 + (191 -  68) * t2,  191 + (217 - 191) * t2h)
-            b = np.where(t < 0.5,  68 + ( 36 -  68) * t2,   36 + (122 -  36) * t2h)
-
-            df_year['color_r'] = r.astype(int)
-            df_year['color_g'] = g.astype(int)
-            df_year['color_b'] = b.astype(int)
-            df_year['elevation'] = 0  # Choropleth fill is primary
-        elif indicator == "fertility_rate":
-            df_year['raw_value'] = df_year['fertility_rate']
-            t = ((df_year['fertility_rate'].clip(1, 7) - 1) / 6).values
-
-            # 3-stop gradient: electric cyan -> deep violet -> vivid magenta
-            # Stop 0 (t=0.0): #06c8f0  (  6, 200, 240) -- electric cyan (low fertility)
-            # Stop 1 (t=0.5): #8b3ff5  (139,  63, 245) -- deep violet
-            # Stop 2 (t=1.0): #f024a0  (240,  36, 160) -- vivid magenta (high fertility)
-            t2  = np.clip(t * 2, 0, 1)
-            t2h = np.clip((t - 0.5) * 2, 0, 1)
-
-            r = np.where(t < 0.5,   6 + (139 -   6) * t2,  139 + (240 - 139) * t2h)
-            g = np.where(t < 0.5, 200 + ( 63 - 200) * t2,   63 + ( 36 -  63) * t2h)
-            b = np.where(t < 0.5, 240 + (245 - 240) * t2,  245 + (160 - 245) * t2h)
-
-            df_year['color_r'] = r.astype(int)
-            df_year['color_g'] = g.astype(int)
-            df_year['color_b'] = b.astype(int)
-            df_year['elevation'] = 0
-        else:
-            df_year['raw_value'] = df_year['net_migration']
-            # Log-scale so moderate values are still clearly visible
-            mag = df_year['net_migration'].abs()
-            intensity = np.log1p(mag) / np.log1p(100000)
-            intensity = np.clip(intensity, 0, 1).values
-            sign = np.sign(df_year['net_migration']).values
-
-            # Base (near-zero): dark navy-slate [22, 32, 52]
-            # Outflow (negative): vivid crimson  [240, 40, 60]
-            # Inflow  (positive): electric cyan  [0, 210, 255]
-            r = np.where(sign < 0, 22 + (240 - 22) * intensity, 22 + (  0 - 22) * intensity)
-            g = np.where(sign < 0, 32 + ( 40 - 32) * intensity, 32 + (210 - 32) * intensity)
-            b = np.where(sign < 0, 52 + ( 60 - 52) * intensity, 52 + (255 - 52) * intensity)
-
-            df_year['color_r'] = r.astype(int)
-            df_year['color_g'] = g.astype(int)
-            df_year['color_b'] = b.astype(int)
-            df_year['elevation'] = 0
-
-        payload = df_year[['country', 'iso_alpha', 'longitude', 'latitude', 'elevation', 'color_r', 'color_g', 'color_b', 'pop', 'raw_value']].to_dict(orient="records")
+        payload = precomputed_payloads[indicator][year]
         await session.send_custom_message("update_deck_data", {"data": payload, "indicator": indicator})
+    # Pre-allocate FigureWidget for population pyramid
+    pop_fig = go.FigureWidget()
+    pop_fig.update_layout(
+        template="plotly_dark", 
+        plot_bgcolor="rgba(0,0,0,0)", 
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=20, r=20, t=40, b=20),
+        height=300
+    )
+    pop_fig.add_bar(x=[], y=[], orientation='h', marker_color='#818cf8')
 
     @render_widget
     def population_pyramid():
+        return pop_fig
+
+    @reactive.Effect
+    def _update_population_pyramid():
         year = input.timeline_year()
         df_year = df_full[df_full['year'] == year]
-        top_10 = df_year.nlargest(10, 'pop')
-        fig = px.bar(top_10, x='pop', y='country', orientation='h', title=f"Top 10 Populations in {year}")
-        fig.update_layout(template="plotly_dark", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
-        return fig
+        top_10 = df_year.nlargest(10, 'pop').sort_values('pop')
+        with pop_fig.batch_update():
+            pop_fig.data[0].x = top_10['pop']
+            pop_fig.data[0].y = top_10['country']
+            pop_fig.layout.title = f"Top 10 Populations in {year}"
+
+    # Pre-allocate FigureWidget for historical trend
+    trend_fig = go.FigureWidget()
+    trend_fig.update_layout(
+        template="plotly_dark", 
+        plot_bgcolor="rgba(0,0,0,0)", 
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=20, r=20, t=40, b=20),
+        height=300
+    )
+    trend_fig.add_scatter(x=[], y=[], mode='lines', line=dict(color='#10d97a', width=2))
+    trend_fig.add_vline(x=1950, line_width=2, line_dash="dash", line_color="#ef4444")
+
+    # Precompute global trends
+    global_trends = {
+        "life_expectancy": df_full.groupby('year')['lifeExp'].mean().reset_index(),
+        "fertility_rate": df_full.groupby('year')['fertility_rate'].mean().reset_index(),
+        "net_migration": df_full.groupby('year')['net_migration'].mean().reset_index()
+    }
 
     @render_widget
     def historical_trend():
+        return trend_fig
+
+    @reactive.Effect
+    def _update_historical_trend_data():
         indicator = input.indicator()
         if indicator == "life_expectancy":
             col = "lifeExp"
+            title = "Global Average Life Expectancy"
         elif indicator == "fertility_rate":
             col = "fertility_rate"
+            title = "Global Average Fertility Rate"
         else:
             col = "net_migration"
+            title = "Global Average Net Migration"
             
-        global_trend = df_full.groupby('year')[col].mean().reset_index()
-        fig = px.line(global_trend, x='year', y=col, title=f"Global Average {indicator}")
-        
+        trend_df = global_trends[indicator]
+        with trend_fig.batch_update():
+            trend_fig.data[0].x = trend_df['year']
+            trend_fig.data[0].y = trend_df[col]
+            trend_fig.layout.title = title
+            
+    @reactive.Effect
+    def _update_historical_trend_year():
         year = input.timeline_year()
-        fig.add_vline(x=year, line_width=3, line_dash="dash", line_color="red")
-        fig.update_layout(template="plotly_dark", plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)")
-        return fig
+        if len(trend_fig.layout.shapes) > 0:
+            with trend_fig.batch_update():
+                trend_fig.layout.shapes[0].x0 = year
+                trend_fig.layout.shapes[0].x1 = year
 
 app = App(app_ui, server)

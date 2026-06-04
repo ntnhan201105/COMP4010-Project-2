@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastReceivedData = null;
     let geojsonObject = null;
     let currentYearData = [];
+    let dataMap = new Map(); // O(1) lookup map
     let currentIndicator = 'life_expectancy';
     let isInteracting = false;
     let rotateTimer = null;
@@ -123,6 +124,10 @@ document.addEventListener('DOMContentLoaded', () => {
             getTooltip: () => null,
             // Handle hover events for custom tooltip
             onHover: (info) => {
+                if (isInteracting) {
+                    hideTooltip();
+                    return;
+                }
                 const container = document.getElementById('deck-map-container');
                 const { object, layer, coordinate } = info;
 
@@ -150,14 +155,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (container) container.style.cursor = 'pointer';
 
                     const iso = object.properties.iso_a3 ? object.properties.iso_a3.toLowerCase() : '';
-                    const name = object.properties.name ? object.properties.name.toLowerCase() : '';
-                    const formalName = object.properties.formal_en ? object.properties.formal_en.toLowerCase() : '';
-
-                    const countryData = currentYearData.find(d => {
-                        const dIso = d.iso_alpha ? d.iso_alpha.toLowerCase() : '';
-                        const dName = d.country ? d.country.toLowerCase() : '';
-                        return (iso && dIso === iso) || (name && dName === name) || (formalName && dName === formalName);
-                    });
+                    let countryData = null;
+                    if (iso && dataMap.has(iso)) {
+                        countryData = dataMap.get(iso);
+                    }
 
                     if (countryData) {
                         const indicatorName = currentIndicator === 'life_expectancy' ? 'Life Expectancy' :
@@ -210,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const iso = object.properties.iso_a3 ? object.properties.iso_a3.toLowerCase() : '';
                     if (iso) {
                         isPanelOpen = true; // Stop rotation
-                        Shiny.setInputValue("selected_country_iso", iso, { priority: "event" });
 
                         if (coordinate) {
                             const [lng, lat] = coordinate;
@@ -228,9 +228,23 @@ document.addEventListener('DOMContentLoaded', () => {
                             currentViewState = newState;
                             deckgl.setProps({ viewState: currentViewState });
 
+                            // Immediately hide the panel and tooltip so Plotly/DOM doesn't steal frame budget
+                            // from the WebGL animation.
+                            const panel = document.querySelector('.deep-dive-panel');
+                            if (panel) panel.style.display = 'none';
+                            hideTooltip();
+
                             rotateTimer = setTimeout(() => {
                                 isInteracting = false;
                             }, 2000);
+
+                            // Delay the Shiny UI event until the animation is mostly finished
+                            // to avoid stutter caused by heavy DOM and Plotly updates.
+                            setTimeout(() => {
+                                Shiny.setInputValue("selected_country_iso", iso, { priority: "event" });
+                            }, 2000);
+                        } else {
+                            Shiny.setInputValue("selected_country_iso", iso, { priority: "event" });
                         }
                     }
                 }
@@ -287,17 +301,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error("Failed to load world countries GeoJSON:", err);
             });
 
-        // Majestic auto-rotation loop — continues even during hover, only pauses on active drag/zoom/scroll or when panel is open
-        const rotateGlobe = () => {
-            if (deckgl && !isInteracting && !isPanelOpen && is3D) {
-                currentViewState = Object.assign({}, currentViewState, {
-                    longitude: (currentViewState.longitude + 0.04) % 360
-                });
-                deckgl.setProps({ viewState: currentViewState });
+        // Majestic auto-rotation loop — throttled to 30 FPS for performance
+        let lastRotationTime = 0;
+        const targetFPS = 30;
+        const frameInterval = 1000 / targetFPS;
+        
+        const rotateGlobe = (timestamp) => {
+            if (timestamp - lastRotationTime >= frameInterval) {
+                lastRotationTime = timestamp;
+                if (deckgl && !isInteracting && !isPanelOpen && is3D) {
+                    // Increased step size from 0.04 to 0.08 since we're running at half the framerate
+                    currentViewState = Object.assign({}, currentViewState, {
+                        longitude: (currentViewState.longitude + 0.08) % 360
+                    });
+                    deckgl.setProps({ viewState: currentViewState });
+                }
             }
             requestAnimationFrame(rotateGlobe);
         };
-        setTimeout(rotateGlobe, 2500);
+        setTimeout(() => requestAnimationFrame(rotateGlobe), 2500);
 
         // Only actual drag/zoom/scroll pauses the rotation
         const resetIdleTimer = () => {
@@ -324,14 +346,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Map colors from Python data onto the GeoJSON features dynamically
         geojsonObject.features.forEach(f => {
             const iso = f.properties.iso_a3 ? f.properties.iso_a3.toLowerCase() : '';
-            const name = f.properties.name ? f.properties.name.toLowerCase() : '';
-            const formalName = f.properties.formal_en ? f.properties.formal_en.toLowerCase() : '';
-
-            const countryData = data.find(d => {
-                const dIso = d.iso_alpha ? d.iso_alpha.toLowerCase() : '';
-                const dName = d.country ? d.country.toLowerCase() : '';
-                return (iso && dIso === iso) || (name && dName === name) || (formalName && dName === formalName);
-            });
+            let countryData = null;
+            if (iso && dataMap.has(iso)) {
+                countryData = dataMap.get(iso);
+            }
 
             if (countryData) {
                 f.properties.fillColor = [countryData.color_r, countryData.color_g, countryData.color_b, 245];
@@ -369,6 +387,15 @@ document.addEventListener('DOMContentLoaded', () => {
         Shiny.addCustomMessageHandler('update_deck_data', function (message) {
             lastReceivedData = message.data;
             currentYearData = message.data;
+
+            // Rebuild O(1) map for quick lookup
+            dataMap.clear();
+            currentYearData.forEach(d => {
+                if (d.iso_alpha) {
+                    dataMap.set(d.iso_alpha.toLowerCase(), d);
+                }
+            });
+
             currentIndicator = message.indicator || 'life_expectancy';
 
             if (!deckgl) {
