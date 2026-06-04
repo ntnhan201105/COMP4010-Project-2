@@ -1,0 +1,24 @@
+/* Custom styles for Demographic Transition Explorer */
+
+/* overrides and extras beyond the inline CSS in app.py */
+
+.finding-card {
+    min-height: 160px;
+}
+
+.country-summary {
+    text-align: center;
+    min-width: 140px;
+}
+
+/* Make Plotly charts responsive */
+.js-plotly-plot, .plot-container {
+    width: 100% !important;
+}
+
+/* Responsive layout helpers */
+@media (max-width: 768px) {
+    .finding-card {
+        min-height: 120px;
+    }
+}
