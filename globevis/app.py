@@ -28,6 +28,11 @@ app_ui = ui.page_navbar(
         ui.div(
             ui.div(id="deck-map-container", style="width: 100%; height: 82vh;"),
             ui.output_ui("deep_dive_panel"),
+            ui.tags.button(
+                ui.HTML('<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-map" style="margin-right: 6px;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg> 2D Map'),
+                id="view-toggle-btn",
+                class_="view-toggle-btn"
+            ),
             style="position: relative; width: 100%; height: 82vh;"
         )
     ),

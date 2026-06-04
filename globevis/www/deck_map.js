@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let isInteracting = false;
     let rotateTimer = null;
     let isPanelOpen = false; // Tracks if Deep Dive panel is open
+    let is3D = true;
+    const globeView = new deck._GlobeView({ id: 'globe' });
+    const mapView = new deck.MapView({ id: 'map', repeat: true });
 
     // Reactively managed viewState unified for both interaction and animation
     let currentViewState = {
@@ -59,10 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const th = tooltip.offsetHeight;
         let x = mouseX + pad;
         let y = mouseY + pad;
-        if (x + tw > window.innerWidth)  x = mouseX - tw - pad;
+        if (x + tw > window.innerWidth) x = mouseX - tw - pad;
         if (y + th > window.innerHeight) y = mouseY - th - pad;
         tooltip.style.left = x + 'px';
-        tooltip.style.top  = y + 'px';
+        tooltip.style.top = y + 'px';
     };
 
     const showTooltip = (html) => {
@@ -100,8 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const initMap = () => {
-        const globeView = new deck._GlobeView();
-        
         // Solid ocean background layer to block seeing backside countries through transparency.
         oceanLayer = new deck.SolidPolygonLayer({
             id: 'ocean',
@@ -115,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         deckgl = new deck.DeckGL({
             container: 'deck-map-container',
-            views: globeView,
+            views: is3D ? globeView : mapView,
             viewState: currentViewState,
             controller: true,
             // Disable built-in tooltip — we use our custom DOM tooltip
@@ -123,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Handle hover events for custom tooltip
             onHover: (info) => {
                 const container = document.getElementById('deck-map-container');
-                const {object, layer, coordinate} = info;
+                const { object, layer, coordinate } = info;
 
                 if (object && layer && layer.id === 'earth-land') {
 
@@ -131,14 +132,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     // A country on the back hemisphere should NOT be hoverable.
                     // Compute the spherical dot product between the hovered point
                     // and the current camera center. If < 0, it's >90° away = hidden side.
-                    if (coordinate) {
+                    if (is3D && coordinate) {
                         const [lng, lat] = coordinate;
                         const camLng = currentViewState.longitude * Math.PI / 180;
                         const camLat = (currentViewState.latitude || 0) * Math.PI / 180;
-                        const ptLng  = lng * Math.PI / 180;
-                        const ptLat  = lat * Math.PI / 180;
+                        const ptLng = lng * Math.PI / 180;
+                        const ptLat = lat * Math.PI / 180;
                         const dot = Math.sin(camLat) * Math.sin(ptLat)
-                                  + Math.cos(camLat) * Math.cos(ptLat) * Math.cos(ptLng - camLng);
+                            + Math.cos(camLat) * Math.cos(ptLat) * Math.cos(ptLng - camLng);
                         if (dot < 0.05) { // slight buffer so edge countries don't flicker
                             if (container) container.style.cursor = 'grab';
                             hideTooltip();
@@ -160,14 +161,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (countryData) {
                         const indicatorName = currentIndicator === 'life_expectancy' ? 'Life Expectancy' :
-                                              currentIndicator === 'fertility_rate' ? 'Fertility Rate' : 'Net Migration';
+                            currentIndicator === 'fertility_rate' ? 'Fertility Rate' : 'Net Migration';
                         let valueStr = '';
                         if (currentIndicator === 'life_expectancy') {
                             valueStr = `${countryData.raw_value.toFixed(1)} years`;
                         } else if (currentIndicator === 'fertility_rate') {
                             valueStr = `${countryData.raw_value.toFixed(2)} births/woman`;
                         } else {
-                            valueStr = countryData.raw_value.toLocaleString(undefined, {signDisplay: 'always'});
+                            valueStr = countryData.raw_value.toLocaleString(undefined, { signDisplay: 'always' });
                         }
                         showTooltip(`
                             <div style="margin-bottom:4px;">
@@ -192,31 +193,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             },
             onClick: (info) => {
-                const {object, layer, coordinate} = info;
+                const { object, layer, coordinate } = info;
                 if (object && layer && layer.id === 'earth-land') {
                     // Similar back-face culling check as hover
-                    if (coordinate) {
+                    if (is3D && coordinate) {
                         const [lng, lat] = coordinate;
                         const camLng = currentViewState.longitude * Math.PI / 180;
                         const camLat = (currentViewState.latitude || 0) * Math.PI / 180;
-                        const ptLng  = lng * Math.PI / 180;
-                        const ptLat  = lat * Math.PI / 180;
+                        const ptLng = lng * Math.PI / 180;
+                        const ptLat = lat * Math.PI / 180;
                         const dot = Math.sin(camLat) * Math.sin(ptLat)
-                                  + Math.cos(camLat) * Math.cos(ptLat) * Math.cos(ptLng - camLng);
+                            + Math.cos(camLat) * Math.cos(ptLat) * Math.cos(ptLng - camLng);
                         if (dot < 0.05) return; // Ignore clicks on the back side
                     }
 
                     const iso = object.properties.iso_a3 ? object.properties.iso_a3.toLowerCase() : '';
                     if (iso) {
                         isPanelOpen = true; // Stop rotation
-                        Shiny.setInputValue("selected_country_iso", iso, {priority: "event"});
+                        Shiny.setInputValue("selected_country_iso", iso, { priority: "event" });
+
+                        if (coordinate) {
+                            const [lng, lat] = coordinate;
+                            isInteracting = true;
+                            clearTimeout(rotateTimer);
+
+                            const newState = Object.assign({}, currentViewState);
+                            newState.longitude = lng;
+                            newState.latitude = lat;
+                            const targetZoom = is3D ? 2.5 : 3.2;
+                            newState.zoom = Math.max(currentViewState.zoom, targetZoom);
+                            newState.transitionDuration = 1500;
+                            newState.transitionInterpolator = new deck.FlyToInterpolator();
+
+                            currentViewState = newState;
+                            deckgl.setProps({ viewState: currentViewState });
+
+                            rotateTimer = setTimeout(() => {
+                                isInteracting = false;
+                            }, 2000);
+                        }
                     }
                 }
             },
             // Controlled state updates sync with canvas dynamically
-            onViewStateChange: ({viewState, interactionState}) => {
+            onViewStateChange: ({ viewState, interactionState }) => {
                 currentViewState = viewState;
-                deckgl.setProps({viewState: currentViewState});
+                deckgl.setProps({ viewState: currentViewState });
 
                 // Detect dragging/zooming to pause auto-rotate
                 if (interactionState && (interactionState.isDragging || interactionState.isPanning || interactionState.isZooming)) {
@@ -235,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(res => res.json())
             .then(geojson => {
                 geojsonObject = geojson;
-                
+
                 // If we already received data from server, render it now
                 if (lastReceivedData) {
                     renderLayers(lastReceivedData);
@@ -244,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     geojsonObject.features.forEach(f => {
                         f.properties.fillColor = [58, 65, 78, 255];
                     });
-                    
+
                     choroplethLayer = new deck.GeoJsonLayer({
                         id: 'earth-land',
                         data: geojsonObject,
@@ -257,8 +279,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         autoHighlight: true,
                         highlightColor: [99, 102, 241, 40]
                     });
-                    
-                    deckgl.setProps({layers: [oceanLayer, choroplethLayer]});
+
+                    deckgl.setProps({ layers: [oceanLayer, choroplethLayer] });
                 }
             })
             .catch(err => {
@@ -267,11 +289,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Majestic auto-rotation loop — continues even during hover, only pauses on active drag/zoom/scroll or when panel is open
         const rotateGlobe = () => {
-            if (deckgl && !isInteracting && !isPanelOpen) {
+            if (deckgl && !isInteracting && !isPanelOpen && is3D) {
                 currentViewState = Object.assign({}, currentViewState, {
                     longitude: (currentViewState.longitude + 0.04) % 360
                 });
-                deckgl.setProps({viewState: currentViewState});
+                deckgl.setProps({ viewState: currentViewState });
             }
             requestAnimationFrame(rotateGlobe);
         };
@@ -304,7 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const iso = f.properties.iso_a3 ? f.properties.iso_a3.toLowerCase() : '';
             const name = f.properties.name ? f.properties.name.toLowerCase() : '';
             const formalName = f.properties.formal_en ? f.properties.formal_en.toLowerCase() : '';
-            
+
             const countryData = data.find(d => {
                 const dIso = d.iso_alpha ? d.iso_alpha.toLowerCase() : '';
                 const dName = d.country ? d.country.toLowerCase() : '';
@@ -334,21 +356,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 getFillColor: [data]
             },
             transitions: {
-                getFillColor: {duration: 600, type: 'interpolation'}
+                getFillColor: { duration: 600, type: 'interpolation' }
             }
         });
 
-        deckgl.setProps({layers: [oceanLayer, choroplethLayer]});
+        deckgl.setProps({ layers: [oceanLayer, choroplethLayer] });
     };
 
     // Handlers will be defined inside if (window.Shiny)
 
     if (window.Shiny) {
-        Shiny.addCustomMessageHandler('update_deck_data', function(message) {
+        Shiny.addCustomMessageHandler('update_deck_data', function (message) {
             lastReceivedData = message.data;
             currentYearData = message.data;
             currentIndicator = message.indicator || 'life_expectancy';
-            
+
             if (!deckgl) {
                 initMap();
             } else {
@@ -356,29 +378,68 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Listen for Shiny panel close to resume globe spin
-        Shiny.addCustomMessageHandler("panel_closed", function(msg) {
+        // Listen for Shiny panel close to resume globe spin and zoom back out
+        Shiny.addCustomMessageHandler("panel_closed", function (msg) {
             isPanelOpen = false;
+
+            if (deckgl) {
+                isInteracting = true;
+                clearTimeout(rotateTimer);
+
+                const newState = Object.assign({}, currentViewState);
+                newState.zoom = 0.85;
+                newState.latitude = 10;
+                newState.transitionDuration = 1500;
+                newState.transitionInterpolator = new deck.FlyToInterpolator();
+
+                currentViewState = newState;
+                deckgl.setProps({ viewState: currentViewState });
+
+                rotateTimer = setTimeout(() => {
+                    isInteracting = false;
+                }, 2000);
+            }
         });
 
-        Shiny.addCustomMessageHandler('fly_to', function(targetState) {
+        Shiny.addCustomMessageHandler('fly_to', function (targetState) {
             if (!deckgl) return;
             isInteracting = true;
             clearTimeout(rotateTimer);
-            
+
             const newState = Object.assign({}, currentViewState);
             newState.longitude = targetState.longitude;
             newState.latitude = targetState.latitude;
             newState.zoom = targetState.zoom;
             newState.transitionDuration = 2000;
             newState.transitionInterpolator = new deck.FlyToInterpolator();
-            
+
             currentViewState = newState;
-            deckgl.setProps({viewState: currentViewState});
-            
+            deckgl.setProps({ viewState: currentViewState });
+
             rotateTimer = setTimeout(() => {
                 isInteracting = false;
             }, 3500);
+        });
+    }
+
+    // Setup View Toggle Button
+    const toggleBtn = document.getElementById('view-toggle-btn');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+            if (!deckgl) return;
+            is3D = !is3D;
+            if (is3D) {
+                toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-map" style="margin-right: 6px;"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon><line x1="9" y1="3" x2="9" y2="18"></line><line x1="15" y1="6" x2="15" y2="21"></line></svg> 2D Map`;
+            } else {
+                toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-globe" style="margin-right: 6px;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg> 3D Globe`;
+                // Reset pitch and bearing for 2D View
+                currentViewState.pitch = 0;
+                currentViewState.bearing = 0;
+                deckgl.setProps({ viewState: currentViewState });
+            }
+            deckgl.setProps({
+                views: is3D ? globeView : mapView
+            });
         });
     }
 });

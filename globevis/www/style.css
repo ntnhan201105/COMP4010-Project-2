@@ -414,3 +414,42 @@ button.collapse-toggle svg {
     font-style: italic;
     color: var(--text-muted);
 }
+
+/* ---------- View Toggle Button (Bottom-Right Floating UI) ---------- */
+.view-toggle-btn {
+    position: absolute;
+    bottom: -50px;
+    right: 20px;
+    z-index: 1000;
+    background: rgba(18, 24, 36, 0.75) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid var(--border-accent) !important;
+    color: var(--text-primary) !important;
+    padding: 10px 16px !important;
+    border-radius: 30px !important;
+    font-weight: 600 !important;
+    font-size: 0.88rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    line-height: 1 !important;
+}
+
+.view-toggle-btn:hover {
+    background: var(--accent-strong) !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 20px var(--accent-glow) !important;
+    transform: translateY(-2px) !important;
+}
+
+.view-toggle-btn svg {
+    transition: transform 0.3s ease !important;
+}
+
+.view-toggle-btn:hover svg {
+    transform: rotate(15deg) scale(1.1) !important;
+}

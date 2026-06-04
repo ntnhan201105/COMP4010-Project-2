@@ -40,26 +40,25 @@
 }
 
 .deep-dive-close {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid var(--border);
-    color: var(--text-secondary);
-    border-radius: 50%;
-    width: 28px;
-    height: 28px;
+    background: transparent !important;
+    border: none !important;
+    color: var(--text-secondary) !important;
+    box-shadow: none !important;
+    padding: 0 !important;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
-    font-size: 0.9rem;
+    font-size: 1.2rem;
     line-height: 1;
 }
 
 .deep-dive-close:hover {
-    background: var(--accent-strong);
-    color: #fff;
-    border-color: var(--accent-strong);
-    transform: scale(1.1);
+    background: transparent !important;
+    color: #ffffff !important;
+    border: none !important;
+    transform: scale(1.15);
 }
 
 .deep-dive-content {
