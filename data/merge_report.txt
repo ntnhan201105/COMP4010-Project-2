@@ -1,0 +1,35 @@
+Merge report
+============
+
+Output rows: 19,388
+Output columns: 19
+Grain: one row per Entity, Code, Year
+Year range: 1950-2023
+Entities: 262
+Rows with missing Code: 592
+
+Included sources:
+- population: 19,388 rows; measures: Population
+- annual-change-in-population: 18,688 rows; measures: Annual population change
+- annual-net-migration-rate: 18,722 rows; measures: Annual net migration rate
+- birth-rate: 18,722 rows; measures: Birth rate
+- child-mortality-rate: 18,722 rows; measures: Child mortality rate
+- death-rate: 18,722 rows; measures: Death rate
+- infant-mortality-rate: 18,722 rows; measures: Infant mortality rate
+- life-expectancy-at-birth: 18,722 rows; measures: Life expectancy at birth
+- natural-population-growth-rate: 18,722 rows; measures: Natural population growth rate
+- population-by-age-group: 19,388 rows; measures: 0-4 years, 65+ years, 25-64 years, 15-24 years, 5-14 years
+- population-density: 18,648 rows; measures: Population density
+- population-growth-rate: 18,722 rows; measures: Population growth rate
+
+Skipped sources:
+- age-structure: same values as population-by-age-group; skipped to avoid duplicate semantic columns.
+
+Quality checks:
+- No duplicate keys in source files.
+- No duplicate keys after merge.
+- One-to-one merge validation enforced for every source.
+- Skipped duplicate datasets verified against their canonical source.
+
+Warnings:
+- Age-group population sum differs from total Population by more than 0.1% for 21 rows; max relative gap=1.0595%.
