@@ -54,19 +54,36 @@ def clean_template(fig: go.Figure) -> go.Figure:
             xaxis=dict(gridcolor='#2e3342', zeroline=False, linecolor='#3a3f52'),
             yaxis=dict(gridcolor='#2e3342', zeroline=False, linecolor='#3a3f52'),
             legend=dict(font=dict(color='#d5d7e0')),
+            hoverlabel=dict(
+                bgcolor='rgba(30,33,48,0.96)',
+                bordercolor='rgba(120,140,160,0.35)',
+                font=dict(color='#e8eaef', family='Inter, sans-serif'),
+            ),
             margin=dict(l=20, r=20, t=50, b=20),
         )
     else:
         fig.update_layout(
-            plot_bgcolor=PLOT_BG,
-            paper_bgcolor=PAPER_BG,
+            plot_bgcolor='#fbfdff',
+            paper_bgcolor='rgba(255,255,255,0)',
             font=dict(color=FONT_COLOR, size=12, family='Inter, sans-serif'),
-            title=dict(font=dict(size=16, color='#222')),
-            xaxis=dict(gridcolor=GRID_COLOR, zeroline=False, linecolor='#ccc'),
-            yaxis=dict(gridcolor=GRID_COLOR, zeroline=False, linecolor='#ccc'),
+            title=dict(font=dict(size=16, color='#142033')),
+            xaxis=dict(gridcolor='#e8eef4', zeroline=False, linecolor='#cfd9e3'),
+            yaxis=dict(gridcolor='#e8eef4', zeroline=False, linecolor='#cfd9e3'),
             legend=dict(font=dict(color=FONT_COLOR)),
+            hoverlabel=dict(
+                bgcolor='rgba(255,255,255,0.96)',
+                bordercolor='rgba(20,32,51,0.18)',
+                font=dict(color='#142033', family='Inter, sans-serif'),
+            ),
             margin=dict(l=20, r=20, t=50, b=20),
         )
+    fig.update_layout(
+        colorway=['#2d7fb8', '#cf4b3f', '#1f9d68', '#d78921', '#7c5fb8', '#256d78'],
+        transition=dict(duration=180, easing='cubic-in-out'),
+        uirevision='demographic-dashboard',
+    )
+    fig.update_xaxes(showline=True, linewidth=1, ticks='outside', ticklen=3)
+    fig.update_yaxes(showline=True, linewidth=1, ticks='outside', ticklen=3)
     return fig
 
 
@@ -174,7 +191,7 @@ def world_map_chart(year: int = 2023, indicator: str = 'Population', compact: bo
             height=330,
             legend=dict(font=dict(size=9),
                        x=0.01, y=0.02, xanchor='left', yanchor='bottom',
-                       bgcolor='rgba(255,255,255,0.72)'),
+                       bgcolor=legend_bg),
         )
     return fig
 

@@ -1,5 +1,5 @@
 """
-Demographic Transition Explorer — Python Shiny Dashboard
+Demographic Stories Explorer — Python Shiny Dashboard
 Run: python app.py  or  shiny run app.py --port 8000
 """
 from pathlib import Path
@@ -29,9 +29,9 @@ from modules.charts import (
 
 # ── Globals ──────────────────────────────────────────────────────────
 COUNTRIES = get_country_list()
-AGING_DEFAULTS = ['Japan', 'South Korea', 'Afghanistan', 'Pakistan']
+AGING_DEFAULTS = ['Japan', 'South Korea', 'Italy', 'Germany', 'China']
 GROWTH_DEFAULTS = ['Nigeria', 'Ethiopia', 'Tanzania', 'Pakistan', 'Democratic Republic of Congo']
-MIGRATION_DEFAULTS = ['Ukraine', 'Syria', 'Venezuela', 'Afghanistan']
+MIGRATION_DEFAULTS = ['Ukraine', 'Syria', 'Afghanistan', 'Yemen']
 FORECAST_DEFAULTS = ['Vietnam', 'Japan', 'Nigeria', 'Germany', 'India', 'Brazil']
 FORECAST_INDICATORS = ['Median age', 'Fertility rate', 'Life expectancy', 'Population growth rate']
 
@@ -164,6 +164,16 @@ body { font-family: 'Inter', sans-serif; background: #f0f2f5; }
     display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr));
     gap: 0.85rem;
 }
+.story-grid {
+    display: grid; grid-template-columns: repeat(3, minmax(220px, 1fr));
+    gap: 0.75rem; margin: 0 0 0.85rem;
+}
+.story-heading {
+    margin: 0 0 0.5rem; color: #172b45; font-size: 1rem; font-weight: 800;
+}
+.story-note {
+    margin: -0.2rem 0 0.65rem; color: #667085; font-size: 0.84rem;
+}
 
 .compact-kpi-grid {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
@@ -190,6 +200,7 @@ body { font-family: 'Inter', sans-serif; background: #f0f2f5; }
     .chart-left-stack { grid-template-columns: 1fr; }
     .chart-stack { grid-template-rows: auto; }
     .chart-right-stack { grid-template-columns: repeat(2, 1fr); }
+    .story-grid { grid-template-columns: 1fr; }
     .evidence-grid { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
 }
 
@@ -280,6 +291,8 @@ body { font-family: 'Inter', sans-serif; background: #f0f2f5; }
 [data-theme="dark"] .finding-card:hover { border-color: var(--accent); }
 [data-theme="dark"] .finding-card .card-title { color: var(--text-heading); }
 [data-theme="dark"] .finding-card .card-sub { color: var(--text-muted); }
+[data-theme="dark"] .story-heading { color: var(--text-heading); }
+[data-theme="dark"] .story-note { color: var(--text-muted); }
 [data-theme="dark"] .compact-kpi-value { color: var(--text-heading); }
 [data-theme="dark"] .control-row { color: var(--text); }
 [data-theme="dark"] ::-webkit-scrollbar-track { background: var(--surface); }
@@ -316,6 +329,8 @@ def finding_click_card(target_tab: str, icon: str, number: str, title: str, subt
 app_ui = ui.page_navbar(
     ui.head_content(
         ui.tags.style(custom_css),
+        ui.include_css("www/custom.css"),
+        ui.include_js("www/dashboard.js"),
         ui.tags.script("""
             (function() {
                 const html = document.documentElement;
@@ -323,12 +338,18 @@ app_ui = ui.page_navbar(
                 if (saved === 'dark') html.setAttribute('data-theme', 'dark');
                 else html.setAttribute('data-theme', 'light');
 
+                function pushThemeToShiny() {
+                    if (window.Shiny) {
+                        Shiny.setInputValue('dark_mode', html.getAttribute('data-theme') === 'dark', {priority: 'event'});
+                    }
+                }
+
                 function toggleTheme() {
                     const cur = html.getAttribute('data-theme');
                     const next = cur === 'dark' ? 'light' : 'dark';
                     html.setAttribute('data-theme', next);
                     localStorage.setItem('demo-theme', next);
-                    if (window.Shiny) Shiny.setInputValue('dark_mode', next === 'dark');
+                    pushThemeToShiny();
                 }
 
                 // Expose toggle function globally so the button can call it
@@ -338,14 +359,17 @@ app_ui = ui.page_navbar(
                 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
                     if (!localStorage.getItem('demo-theme')) {
                         html.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+                        pushThemeToShiny();
                     }
                 });
+
+                document.addEventListener('shiny:connected', pushThemeToShiny);
             })();
         """),
     ),
 
     # ── TAB 1: HOME ──────────────────────────────────────────────────
-    ui.nav_panel("Home",
+    ui.nav_panel("Overview",
         ui.layout_sidebar(
             ui.sidebar(
                 ui.tags.h5("Filters", style="margin-top:0;"),
@@ -362,20 +386,69 @@ app_ui = ui.page_navbar(
             ui.tags.div(
                 ui.tags.button(
                     ui.tags.span("☀️", class_="icon-slot"),
-                    ui.tags.span("Dark mode"),
+                    ui.tags.span("Theme"),
                     class_="theme-toggle",
                     onclick="window._toggleDarkMode(); this.querySelector('.icon-slot').textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';",
                 ),
+                ui.tags.section(
+                    ui.tags.div("Global demographic story", class_="home-intro-kicker"),
+                    ui.tags.div(
+                        ui.tags.div(
+                            ui.tags.h1("One transition, three futures.", class_="home-intro-title"),
+                            ui.tags.p(
+                                "Fertility is falling and longevity is rising, but countries are not moving together. "
+                                "Use the overview to choose a focused evidence path.",
+                                class_="home-intro-copy",
+                            ),
+                            class_="home-intro-copyblock",
+                        ),
+                        ui.tags.div(
+                            ui.tags.div("1950-2023", class_="home-intro-stat"),
+                            ui.tags.div("long-run country panel", class_="home-intro-label"),
+                            class_="home-intro-badge",
+                        ),
+                        class_="home-intro-inner",
+                    ),
+                    class_="home-intro",
+                ),
                 ui.output_ui("home_kpis"),
                 ui.tags.div(
+                    ui.tags.div("Choose one evidence path", class_="story-heading"),
+                    ui.tags.div("Each path keeps the dashboard to a small set of figures, so the page reads like an argument instead of a chart dump.", class_="story-note"),
                     ui.tags.div(
-                        _card(ui.output_ui("home_map_title"), output_widget("world_map")),
+                        finding_click_card(
+                            "Migration",
+                            "Conflict",
+                            "4 countries",
+                            "War & Disruption",
+                            "Conflict bends migration, growth, mortality, and longevity trends.",
+                        ),
+                        finding_click_card(
+                            "Aging Societies",
+                            "Aging",
+                            "5 countries",
+                            "Low Fertility Futures",
+                            "Ultra-low fertility shifts pressure toward care, pensions, and labor supply.",
+                        ),
+                        finding_click_card(
+                            "ML Analysis",
+                            "Clusters",
+                            "4 groups",
+                            "Similar Futures",
+                            "Countries with similar demographic futures are not always geographic neighbors.",
+                        ),
+                        class_="story-grid",
+                    ),
+                ),
+                ui.tags.div(
+                    ui.tags.div(
+                        _card("World Map", output_widget("world_map")),
                         _card("Top Elderly Share", output_widget("home_elderly_ranking")),
                         class_="chart-left-stack",
                     ),
                     ui.tags.div(
                         _card("Global Trends 1950–2023", output_widget("home_global_trends")),
-                        _card(ui.output_ui("home_cluster_mix_title"), output_widget("home_cluster_mix")),
+                        _card("Cluster Mix", output_widget("home_cluster_mix")),
                         class_="chart-right-stack",
                     ),
                     class_="chart-grid-main",
@@ -387,39 +460,14 @@ app_ui = ui.page_navbar(
     ),
 
     # ── TAB 2: GLOBAL TRANSITION ─────────────────────────────────────
-    ui.nav_panel("Global Transition",
-        ui.tags.div(
-            ui.tags.h3("Global Demographic Transition 1950–2023", style="text-align:center; padding:1rem 0 0.5rem;"),
-            ui.tags.div(
-                ui.tags.strong("What to look for: "),
-                "countries move from high fertility and low life expectancy toward longer lives and lower fertility, but they do not arrive at the same demographic future.",
-                class_="section-note",
-            ),
-            ui.output_ui("transition_kpis"),
-            ui.layout_columns(
-                _card("Fertility vs Life Expectancy",
-                    ui.tags.div(
-                        ui.input_slider("transition_year", "Year", 1950, 2023, 2023, step=1, sep=""),
-                        ui.input_checkbox("transition_highlight_war", "🔴 Highlight war-torn", value=False),
-                        class_="control-row",
-                    ),
-                    output_widget("bubble_scatter"),
-                ),
-                _card("World Average Trends", output_widget("global_trends")),
-                col_widths=[7, 5],
-            ),
-            style="padding:0 1rem 2rem; max-width:100%; margin:0 auto;",
-        ),
-        value="Global Transition",
-    ),
-
+    
     # ── TAB 3: AGING SOCIETIES ───────────────────────────────────────
-    ui.nav_panel("Aging Societies",
+    ui.nav_panel("Aging Futures",
         ui.tags.div(
-            ui.tags.h3("Aging Societies", style="text-align:center; padding:1rem 0 0.5rem;"),
+            ui.tags.h3("Low Fertility & Aging Futures", style="text-align:center; padding:1rem 0 0.5rem;"),
             ui.tags.div(
                 ui.tags.strong("Decision lens: "),
-                "low fertility and rising median age signal pressure on pensions, health care, and the working-age population.",
+                "this story follows low-fertility countries where fewer births and longer lives shift pressure toward care systems, pensions, and labor supply.",
                 class_="section-note",
             ),
             ui.output_ui("aging_kpis"),
@@ -438,50 +486,29 @@ app_ui = ui.page_navbar(
                     output_widget("elderly_ranking")),
                 col_widths=[4, 4, 4],
             ),
-            style="padding:0 1rem 2rem; max-width:100%; margin:0 auto;",
+            class_="page-shell story-page aging-page",
         ),
         value="Aging Societies",
     ),
 
     # ── TAB 4: RAPID GROWTH ──────────────────────────────────────────
-    ui.nav_panel("Rapid Growth",
-        ui.tags.div(
-            ui.tags.h3("Rapid-Growth Populations", style="text-align:center; padding:1rem 0 0.5rem;"),
-            ui.tags.div(
-                ui.tags.strong("Decision lens: "),
-                "a large child share can become a demographic dividend, but only if education, jobs, and infrastructure keep pace.",
-                class_="section-note",
-            ),
-            ui.output_ui("growth_kpis"),
-            ui.layout_columns(
-                _card("Population Growth Rate vs World Average",
-                    ui.input_selectize("growth_countries", "", choices=COUNTRIES, selected=GROWTH_DEFAULTS, multiple=True),
-                    output_widget("growth_lines"),
-                ),
-                col_widths=[12],
-            ),
-            ui.layout_columns(
-                _card("Top Children Share",
-                    ui.input_slider("growth_year", "Year", 1950, 2023, 2023, step=1, sep=""),
-                    output_widget("children_ranking")),
-                _card("Fertility Forecast", ui.input_selectize("growth_forecast_country", "", choices=COUNTRIES, selected='Nigeria'), output_widget("growth_forecast")),
-                col_widths=[6, 6],
-            ),
-            style="padding:0 1rem 2rem; max-width:100%; margin:0 auto;",
-        ),
-        value="Rapid Growth",
-    ),
-
+    
     # ── TAB 5: MIGRATION ─────────────────────────────────────────────
-    ui.nav_panel("Migration",
+    ui.nav_panel("War & Disruption",
         ui.tags.div(
-            ui.tags.h3("Migration-Sensitive Patterns", style="text-align:center; padding:1rem 0 0.5rem;"),
+            ui.tags.h3("War-Torn Demographic Disruption", style="text-align:center; padding:1rem 0 0.5rem;"),
             ui.tags.div(
                 ui.tags.strong("Decision lens: "),
-                "migration and conflict shocks can bend otherwise smooth demographic trends, so this page compares population growth, life expectancy, mortality, and migrant stock together.",
+                "conflict shocks can bend otherwise smooth demographic trends, so this page keeps the evidence focused on migrant stock, population growth, mortality, and longevity.",
                 class_="section-note",
             ),
             ui.output_ui("migration_kpis"),
+            ui.layout_columns(
+                _card("2D Demographic Position — War-Torn Countries",
+                    output_widget("migration_demographic_position"),
+                ),
+                col_widths=[12],
+            ),
             ui.layout_columns(
                 _card("International Migrant Stock",
                     ui.input_selectize("migration_countries", "", choices=COUNTRIES, selected=MIGRATION_DEFAULTS, multiple=True),
@@ -497,18 +524,18 @@ app_ui = ui.page_navbar(
                 ),
                 col_widths=[12],
             ),
-            style="padding:0 1rem 2rem; max-width:100%; margin:0 auto;",
+            class_="page-shell story-page migration-page",
         ),
         value="Migration",
     ),
 
     # ── TAB 6: ML ANALYSIS ───────────────────────────────────────────
-    ui.nav_panel("ML Analysis",
+    ui.nav_panel("Similar Futures",
         ui.tags.div(
-            ui.tags.h3("ML: Clustering & Similarity", style="text-align:center; padding:1rem 0 0.5rem;"),
+            ui.tags.h3("Similar Futures: Clustering & Country Peers", style="text-align:center; padding:1rem 0 0.5rem;"),
             ui.tags.div(
                 ui.tags.strong("Analytical lens: "),
-                "K-Means groups countries by demographic structure, while similarity search helps find countries facing comparable planning problems even across regions.",
+                "K-Means turns many indicators into a 2D story: countries with similar demographic futures are not always geographic neighbors.",
                 class_="section-note",
             ),
             ui.output_ui("ml_kpis"),
@@ -526,7 +553,7 @@ app_ui = ui.page_navbar(
                 _card("Top 10 Most Similar", output_widget("similarity_table")),
                 col_widths=[6, 6],
             ),
-            style="padding:0 1rem 2rem; max-width:100%; margin:0 auto;",
+            class_="page-shell story-page ml-page",
         ),
         value="ML Analysis",
     ),
@@ -561,47 +588,15 @@ app_ui = ui.page_navbar(
                 ),
                 col_widths=[6, 6],
             ),
-            style="padding:0 1rem 2rem; max-width:100%; margin:0 auto;",
+            class_="page-shell story-page country-page",
         ),
         value="Country Explorer",
     ),
 
     # ── TAB 8: FORECAST ────────────────────────────────────────────
-    ui.nav_panel("Forecast",
-        ui.tags.div(
-            ui.tags.h3("Demographic Forecast Explorer", style="text-align:center; padding:1rem 0 0.5rem;"),
-            ui.tags.div(
-                ui.tags.strong("Analytical lens: "),
-                "simple linear trend projections based on the last 30 years of data — useful for spotting direction and relative speed, not precise predictions.",
-                class_="section-note",
-            ),
-            ui.tags.div(
-                ui.input_selectize("forecast_indicator", "Indicator",
-                    choices=FORECAST_INDICATORS, selected='Median age'),
-                ui.input_selectize("forecast_countries", "Countries",
-                    choices=COUNTRIES, selected=FORECAST_DEFAULTS, multiple=True),
-                ui.input_slider("forecast_horizon", "Forecast horizon (years)",
-                    min=5, max=30, value=15, step=1),
-                ui.input_checkbox("forecast_highlight_war", "🔴 Include war-torn countries", value=False),
-                class_="control-row",
-                style="max-width:900px; margin:0 auto 0.5rem;",
-            ),
-            ui.layout_columns(
-                _card("Forecast Trajectories", output_widget("forecast_lines")),
-                _card("Which countries are changing fastest?", output_widget("forecast_trend")),
-                col_widths=[7, 5],
-            ),
-            ui.layout_columns(
-                _card("Projected Values", output_widget("forecast_values_table")),
-                col_widths=[12],
-            ),
-            style="padding:0 1rem 2rem; max-width:100%; margin:0 auto;",
-        ),
-        value="Forecast",
-    ),
-
+    
     id="main_nav",
-    title="Demographic Transition Explorer",
+    title="Demographic Stories Explorer",
 )
 
 
@@ -613,7 +608,11 @@ def server(input, output, session):
     # ── Dark mode sync ──────────────────────────────────────────────
     def _use_dark_theme():
         """Call at start of each render_widget to reactively track dark mode."""
-        set_theme_dark(bool(input.dark_mode()))
+        try:
+            dark = bool(input.dark_mode())
+        except Exception:
+            dark = False
+        set_theme_dark(dark)
 
     @reactive.effect
     @reactive.event(input.dark_mode)
@@ -641,19 +640,7 @@ def server(input, output, session):
         if w_year.empty:
             return ui.tags.div()
         w = w_year.iloc[0]
-        clusters = run_clustering(year=year)
-        aging_count = int((clusters['Cluster Label'] == 'Aging low-fertility societies').sum())
-        young_count = int((clusters['Cluster Label'] == 'Young high-fertility populations').sum())
 
-        def _v(key, fmt='.1f'):
-            val = w.get(key)
-            return f"{val:{fmt}}" if pd.notna(val) else '-'
-
-        vals = [
-            ("World population", _v('Population', '.2f') + 'B' if pd.notna(w.get('Population')) and w['Population'] > 1e8 else _v('Population', '.0f'),
-             w['Population']/1e9 if pd.notna(w.get('Population')) else 0,
-             "people" if pd.notna(w.get('Population')) else ""),
-        ]
         # Build compact KPI cards
         pop_val = f"{w['Population']/1e9:.2f}B" if pd.notna(w.get('Population')) else '-'
         fert_val = f"{w['Fertility rate']:.1f}" if pd.notna(w.get('Fertility rate')) else '-'
@@ -679,10 +666,6 @@ def server(input, output, session):
         ]
         return ui.tags.div(*items, class_="metric-grid")
 
-    @render.ui
-    def home_map_title():
-        return ui.tags.span(f"World {input.indicator_sel()} — {input.year_slider()}")
-
     @render_widget
     def world_map():
         _use_dark_theme()
@@ -694,10 +677,6 @@ def server(input, output, session):
         _use_dark_theme()
         fig = global_trend_lines(compact=True)
         return fig
-
-    @render.ui
-    def home_cluster_mix_title():
-        return ui.tags.span(f"Cluster mix - {input.year_slider()}")
 
     @render_widget
     def home_cluster_mix():
@@ -717,9 +696,9 @@ def server(input, output, session):
             hovertemplate='%{y}<br>%{x} countries<extra></extra>',
         ))
         fig.update_layout(
-            title=f'Countries by demographic cluster - {year}',
-            height=190,
-            margin=dict(l=16, r=36, t=34, b=18),
+            title=None,
+            height=210,
+            margin=dict(l=10, r=38, t=8, b=24),
             xaxis_title='Countries',
             yaxis_title='',
             xaxis=dict(range=[0, max(70, int(counts.max()) + 10)]),
@@ -731,7 +710,7 @@ def server(input, output, session):
     def home_elderly_ranking():
         _use_dark_theme()
         fig = comparison_ranking_bar('Elderly share (%)', year=input.year_slider(), top_n=6, color_scale='Reds')
-        fig.update_layout(height=215, margin=dict(l=14, r=30, t=34, b=18))
+        fig.update_layout(title=None, height=240, margin=dict(l=10, r=28, t=8, b=26))
         return fig
 
     @render_widget
@@ -882,6 +861,13 @@ def server(input, output, session):
                 class_="kpi-item",
             ))
         return ui.tags.div(*items, class_="kpi-banner")
+
+    @render_widget
+    def migration_demographic_position():
+        _use_dark_theme()
+        fig = bubble_scatter_year(2023, highlight_war_torn=True)
+        fig.update_layout(height=480)
+        return fig
 
     @render_widget
     def migration_trends():
