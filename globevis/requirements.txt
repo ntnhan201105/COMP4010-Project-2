@@ -3,4 +3,5 @@ shinywidgets
 pydeck
 plotly
 pandas
+numpy
 pyarrow

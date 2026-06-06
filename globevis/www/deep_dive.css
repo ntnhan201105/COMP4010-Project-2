@@ -2,6 +2,7 @@
    Deep Dive Panel (Absolute Floating UI)
    ===================================================================== */
 .deep-dive-panel {
+    display: none;
     position: absolute;
     top: 20px;
     right: 20px;
@@ -16,6 +17,10 @@
     z-index: 1000;
     color: var(--text-primary);
     animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.deep-dive-panel.is-visible {
+    display: block;
 }
 
 @keyframes slideInRight {

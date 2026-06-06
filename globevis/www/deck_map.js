@@ -7,6 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentYearData = [];
     let dataMap = new Map(); // O(1) lookup map
     let currentIndicator = 'life_expectancy';
+    let activeGroupIsos = new Set();
+    let activeOriginIsos = new Set();
+    let activeHostIsos = new Set();
+    let groupFocusOpen = false;
+    let dimNonGroup = false;
     let isInteracting = false;
     let rotateTimer = null;
     let isPanelOpen = false; // Tracks if Deep Dive panel is open
@@ -88,6 +93,21 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     // -----------------------------------------------------------------------
 
+    const syncStageLayout = () => {
+        const stage = document.getElementById('story-stage');
+        const panel = document.querySelector('.story-dashboard-panel');
+        if (stage) stage.classList.toggle('is-focused', groupFocusOpen);
+        if (panel) panel.classList.toggle('is-open', groupFocusOpen);
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+            if (deckgl) deckgl.redraw(true);
+        }, 420);
+    };
+
+    const activeGroupData = () => currentYearData.filter(d =>
+        d.iso_alpha && activeGroupIsos.has(d.iso_alpha.toLowerCase())
+    );
+
     // Helper to generate a high-resolution subdivided polygon covering the entire Earth.
     const generateGlobePolygon = () => {
         const coords = [];
@@ -161,15 +181,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     if (countryData) {
-                        const indicatorName = currentIndicator === 'life_expectancy' ? 'Life Expectancy' :
-                            currentIndicator === 'fertility_rate' ? 'Fertility Rate' : 'Net Migration';
+                        const indicatorName = {
+                            net_migration_rate: 'Migration Rate',
+                            fertility_rate: 'Fertility Rate',
+                            life_expectancy: 'Life Expectancy',
+                            child_mortality: 'Child Mortality',
+                            death_rate: 'Death Rate'
+                        }[currentIndicator] || 'Value';
                         let valueStr = '';
-                        if (currentIndicator === 'life_expectancy') {
-                            valueStr = `${countryData.raw_value.toFixed(1)} years`;
+                        if (countryData.raw_value === null || countryData.raw_value === undefined || Number.isNaN(countryData.raw_value)) {
+                            valueStr = 'No data';
+                        } else if (currentIndicator === 'net_migration_rate') {
+                            valueStr = `${countryData.raw_value.toLocaleString(undefined, { signDisplay: 'always', maximumFractionDigits: 1 })} per 1,000`;
                         } else if (currentIndicator === 'fertility_rate') {
-                            valueStr = `${countryData.raw_value.toFixed(2)} births/woman`;
+                            valueStr = `${countryData.raw_value.toFixed(2)} children per woman`;
+                        } else if (currentIndicator === 'life_expectancy') {
+                            valueStr = `${countryData.raw_value.toFixed(1)} years`;
+                        } else if (currentIndicator === 'child_mortality') {
+                            valueStr = `${countryData.raw_value.toFixed(2)}% of children`;
                         } else {
-                            valueStr = countryData.raw_value.toLocaleString(undefined, { signDisplay: 'always' });
+                            valueStr = `${countryData.raw_value.toFixed(1)} deaths per 1,000`;
                         }
                         showTooltip(`
                             <div style="margin-bottom:4px;">
@@ -231,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             // Immediately hide the panel and tooltip so Plotly/DOM doesn't steal frame budget
                             // from the WebGL animation.
                             const panel = document.querySelector('.deep-dive-panel');
-                            if (panel) panel.style.display = 'none';
+                            if (panel) panel.classList.remove('is-visible');
                             hideTooltip();
 
                             rotateTimer = setTimeout(() => {
@@ -309,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rotateGlobe = (timestamp) => {
             if (timestamp - lastRotationTime >= frameInterval) {
                 lastRotationTime = timestamp;
-                if (deckgl && !isInteracting && !isPanelOpen && is3D) {
+                if (deckgl && !isInteracting && !isPanelOpen && !groupFocusOpen && is3D) {
                     // Increased step size from 0.04 to 0.08 since we're running at half the framerate
                     currentViewState = Object.assign({}, currentViewState, {
                         longitude: (currentViewState.longitude + 0.08) % 360
@@ -352,33 +383,78 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (countryData) {
-                f.properties.fillColor = [countryData.color_r, countryData.color_g, countryData.color_b, 245];
+                const isGroupMember = activeGroupIsos.has(iso);
+                const isOrigin = activeOriginIsos.has(iso);
+                const isHost = activeHostIsos.has(iso);
+                const shouldDim = groupFocusOpen && dimNonGroup && !isGroupMember;
+                f.properties.fillColor = shouldDim
+                    ? [24, 30, 44, 82]
+                    : groupFocusOpen && isOrigin
+                        ? [239, 68, 68, 255]
+                        : groupFocusOpen && isHost
+                            ? [34, 211, 238, 255]
+                            : [countryData.color_r, countryData.color_g, countryData.color_b, isGroupMember && groupFocusOpen ? 255 : 245];
+                f.properties.isGroupMember = isGroupMember;
+                f.properties.isOrigin = isOrigin;
+                f.properties.isHost = isHost;
             } else {
                 // No data — medium gray, clearly distinct from midnight-blue ocean
-                f.properties.fillColor = [58, 65, 78, 255];
+                f.properties.fillColor = groupFocusOpen && dimNonGroup ? [24, 30, 44, 70] : [58, 65, 78, 255];
+                f.properties.isGroupMember = false;
+                f.properties.isOrigin = false;
+                f.properties.isHost = false;
             }
         });
+
+        const pulseLayer = groupFocusOpen ? new deck.ScatterplotLayer({
+            id: 'group-pulse',
+            data: activeGroupData(),
+            getPosition: d => [d.longitude, d.latitude],
+            getRadius: 520000,
+            radiusMinPixels: 8,
+            radiusMaxPixels: 34,
+            stroked: true,
+            filled: true,
+            getFillColor: [255, 255, 255, 32],
+            getLineColor: [255, 255, 255, 220],
+            lineWidthMinPixels: 2,
+            pickable: false
+        }) : null;
 
         choroplethLayer = new deck.GeoJsonLayer({
             id: 'earth-land',
             data: geojsonObject,
             stroked: true,
             filled: true,
+            lineWidthUnits: 'pixels',
             lineWidthMinPixels: 1.0,
-            getLineColor: [99, 102, 241, 55],
+            getLineWidth: f => {
+                if (groupFocusOpen && f.properties.isGroupMember) return 4;
+                return 1;
+            },
+            getLineColor: f => {
+                if (groupFocusOpen && f.properties.isOrigin) return [255, 180, 180, 255];
+                if (groupFocusOpen && f.properties.isHost) return [180, 245, 255, 255];
+                if (groupFocusOpen && f.properties.isGroupMember) return [255, 255, 255, 245];
+                return [99, 102, 241, 55];
+            },
             getFillColor: f => f.properties.fillColor,
             pickable: true,
             autoHighlight: true,
             highlightColor: [99, 102, 241, 40],
             updateTriggers: {
-                getFillColor: [data]
+                getFillColor: [data, groupFocusOpen, dimNonGroup],
+                getLineColor: [data, groupFocusOpen, dimNonGroup],
+                getLineWidth: [data, groupFocusOpen]
             },
             transitions: {
                 getFillColor: { duration: 600, type: 'interpolation' }
             }
         });
 
-        deckgl.setProps({ layers: [oceanLayer, choroplethLayer] });
+        const layers = [oceanLayer, choroplethLayer];
+        if (pulseLayer) layers.push(pulseLayer);
+        deckgl.setProps({ layers });
     };
 
     // Handlers will be defined inside if (window.Shiny)
@@ -405,9 +481,57 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        Shiny.addCustomMessageHandler('focus_group', function (message) {
+            groupFocusOpen = !!message.open;
+            dimNonGroup = !!message.dim;
+            activeGroupIsos = new Set((message.isos || []).map(iso => String(iso).toLowerCase()));
+            activeOriginIsos = new Set((message.origins || []).map(iso => String(iso).toLowerCase()));
+            activeHostIsos = new Set((message.hosts || []).map(iso => String(iso).toLowerCase()));
+            isPanelOpen = groupFocusOpen;
+            syncStageLayout();
+
+            if (deckgl && lastReceivedData) {
+                renderLayers(lastReceivedData);
+            }
+
+            if (!deckgl) return;
+
+            isInteracting = true;
+            clearTimeout(rotateTimer);
+
+            const targetState = message.targetState || {};
+            const newState = Object.assign({}, currentViewState);
+            if (groupFocusOpen) {
+                newState.longitude = targetState.longitude ?? 44;
+                newState.latitude = targetState.latitude ?? 18;
+                newState.zoom = targetState.zoom ?? 0.72;
+            } else {
+                newState.longitude = 0;
+                newState.latitude = 10;
+                newState.zoom = 0.85;
+            }
+            newState.pitch = 0;
+            newState.bearing = 0;
+            newState.transitionDuration = 1600;
+            newState.transitionInterpolator = new deck.FlyToInterpolator();
+
+            currentViewState = newState;
+            deckgl.setProps({ viewState: currentViewState });
+
+            rotateTimer = setTimeout(() => {
+                isInteracting = false;
+            }, 2200);
+        });
+
         // Listen for Shiny panel close to resume globe spin and zoom back out
         Shiny.addCustomMessageHandler("panel_closed", function (msg) {
-            isPanelOpen = false;
+            const panel = document.querySelector('.deep-dive-panel');
+            if (panel) panel.classList.remove('is-visible');
+            isPanelOpen = groupFocusOpen;
+            if (groupFocusOpen) {
+                if (deckgl && lastReceivedData) renderLayers(lastReceivedData);
+                return;
+            }
 
             if (deckgl) {
                 isInteracting = true;
@@ -426,6 +550,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     isInteracting = false;
                 }, 2000);
             }
+        });
+
+        Shiny.addCustomMessageHandler("deep_dive_visibility", function (msg) {
+            const panel = document.querySelector('.deep-dive-panel');
+            if (!panel) return;
+            panel.classList.toggle('is-visible', !!msg.open);
         });
 
         Shiny.addCustomMessageHandler('fly_to', function (targetState) {

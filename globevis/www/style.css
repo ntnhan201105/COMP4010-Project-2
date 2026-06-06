@@ -108,6 +108,38 @@ select option {
     color: #ffffff !important;
 }
 
+.selectize-control.multi .selectize-input,
+.selectize-control.single .selectize-input {
+    background: rgba(26, 32, 48, 0.9) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-accent) !important;
+    border-radius: 7px !important;
+    box-shadow: none !important;
+    min-height: 42px;
+}
+
+.selectize-control.multi .selectize-input > div {
+    background: rgba(99, 102, 241, 0.22) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid rgba(129, 140, 248, 0.35) !important;
+    border-radius: 5px !important;
+    padding: 0.2rem 0.4rem !important;
+}
+
+.selectize-dropdown {
+    background: #1a2030 !important;
+    border: 1px solid var(--border-accent) !important;
+    color: var(--text-primary) !important;
+}
+
+.selectize-dropdown .option {
+    color: var(--text-primary) !important;
+}
+
+.selectize-dropdown .active {
+    background: rgba(99, 102, 241, 0.24) !important;
+}
+
 /* ---------- Sidebar HR ---------- */
 .bslib-sidebar-layout .bslib-sidebar hr {
     border-color: var(--border) !important;
@@ -418,7 +450,7 @@ button.collapse-toggle svg {
 /* ---------- View Toggle Button (Bottom-Right Floating UI) ---------- */
 .view-toggle-btn {
     position: absolute;
-    bottom: -50px;
+    bottom: 20px;
     right: 20px;
     z-index: 1000;
     background: rgba(18, 24, 36, 0.75) !important;
@@ -452,4 +484,294 @@ button.collapse-toggle svg {
 
 .view-toggle-btn:hover svg {
     transform: rotate(15deg) scale(1.1) !important;
+}
+
+/* ---------- Story Narrative Blocks ---------- */
+.story-panel {
+    padding: 1rem 1.25rem 0.2rem 1.25rem;
+    margin: 0.75rem 0 0.35rem 0;
+    border-left: 3px solid var(--accent-strong);
+    background: transparent !important;
+}
+
+.story-title {
+    margin: 0 0 0.8rem 0 !important;
+    font-size: 1.35rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    background: transparent !important;
+}
+
+.story-copy {
+    max-width: 1100px;
+    margin: 0 0 0.8rem 0 !important;
+    color: #b8c4d8 !important;
+    font-size: 0.95rem !important;
+    line-height: 1.55 !important;
+    background: transparent !important;
+}
+
+.globe-story-callout {
+    position: absolute;
+    left: 22px;
+    bottom: 20px;
+    z-index: 900;
+    max-width: 430px;
+    padding: 1rem 1.1rem;
+    background: rgba(8, 11, 18, 0.70);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-left: 3px solid var(--accent);
+    color: var(--text-primary);
+}
+
+.globe-callout-title {
+    margin: 0 0 0.45rem 0 !important;
+    font-size: 1.3rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    background: transparent !important;
+}
+
+.globe-callout-copy {
+    margin: 0 !important;
+    color: #cbd5e1 !important;
+    font-size: 0.92rem !important;
+    line-height: 1.5 !important;
+    background: transparent !important;
+}
+
+/* ---------- Globe-first Story Stage ---------- */
+.bslib-sidebar-layout > .main {
+    padding: 0 !important;
+}
+
+.story-stage {
+    display: flex;
+    gap: 0;
+    width: 100%;
+    height: calc(100vh - 64px);
+    min-height: 620px;
+    overflow: hidden;
+    background: var(--bg-base);
+}
+
+.story-globe-pane {
+    position: relative;
+    flex: 1 1 100%;
+    min-width: 0;
+    height: 100%;
+    padding: 1.25rem;
+    transition: flex-basis 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+        flex-grow 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.story-stage.is-focused .story-globe-pane {
+    flex: 0 0 40%;
+}
+
+.story-dashboard-panel {
+    flex: 0 0 0;
+    width: 0;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1rem 1.2rem 1.4rem 1.2rem;
+    background: rgba(12, 16, 26, 0.94);
+    border-left: 1px solid var(--border);
+    box-shadow: -20px 0 42px rgba(0, 0, 0, 0.42);
+    transform: translateX(34px);
+    opacity: 0;
+    pointer-events: none;
+    transition: flex-basis 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+        width 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.35s ease;
+}
+
+.story-dashboard-panel.is-open,
+.story-stage.is-focused .story-dashboard-panel {
+    flex-basis: 60%;
+    width: 60%;
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.story-dashboard-header {
+    position: sticky;
+    top: -1rem;
+    z-index: 20;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: -1rem -1.2rem 0.4rem -1.2rem;
+    padding: 1rem 1.2rem 0.9rem 1.2rem;
+    background: rgba(12, 16, 26, 0.96);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+}
+
+.story-dashboard-eyebrow {
+    display: block;
+    margin-bottom: 0.2rem;
+    color: var(--accent);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.story-dashboard-title {
+    margin: 0 0 0.3rem 0 !important;
+    color: #ffffff !important;
+    font-size: 1.25rem !important;
+    line-height: 1.2 !important;
+    background: transparent !important;
+}
+
+.story-dashboard-copy {
+    max-width: 760px;
+    margin: 0 !important;
+    color: #b8c4d8 !important;
+    font-size: 0.88rem !important;
+    line-height: 1.45 !important;
+    background: transparent !important;
+}
+
+.story-panel-close {
+    flex: 0 0 auto;
+    background: rgba(26, 32, 48, 0.9) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-accent) !important;
+    border-radius: 7px !important;
+    padding: 0.45rem 0.75rem !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+}
+
+.story-panel-close:hover {
+    background: var(--accent-dim) !important;
+    border-color: var(--accent) !important;
+}
+
+.story-sidebar-block {
+    margin-top: 0.85rem;
+}
+
+.story-open-button {
+    width: 100%;
+    background: rgba(99, 102, 241, 0.18) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-accent) !important;
+    border-radius: 7px !important;
+    padding: 0.55rem 0.75rem !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+}
+
+.story-open-button:hover {
+    background: rgba(99, 102, 241, 0.28) !important;
+    border-color: var(--accent) !important;
+}
+
+.story-dashboard-panel .story-panel {
+    padding: 0.9rem 0 0.2rem 1.05rem;
+    margin: 0.75rem 0 0.45rem 0;
+}
+
+.story-dashboard-panel .card {
+    margin-top: 0.8rem;
+    border-radius: 8px !important;
+}
+
+.corridor-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    align-items: center;
+    padding: 0.15rem 0 0.55rem 1.05rem;
+    color: #cbd5e1;
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.corridor-swatch {
+    display: inline-block;
+    width: 0.78rem;
+    height: 0.78rem;
+    margin-right: 0.28rem;
+    border-radius: 50%;
+    box-shadow: 0 0 12px currentColor;
+    vertical-align: -0.08rem;
+}
+
+.corridor-origin {
+    color: #ef4444;
+    background: #ef4444;
+}
+
+.corridor-host {
+    color: #22d3ee;
+    background: #22d3ee;
+}
+
+.fertility-low {
+    color: #ef4444;
+    background: #ef4444;
+}
+
+.fertility-replacement {
+    color: #94a3b8;
+    background: #94a3b8;
+}
+
+.story-dashboard-panel .deep-dive-panel {
+    position: static;
+    width: auto;
+    margin: 0.75rem 0 1rem 0;
+    animation: none;
+}
+
+.story-stage.is-focused .globe-story-callout {
+    max-width: 330px;
+}
+
+.story-stage.is-focused .view-toggle-btn {
+    bottom: 20px;
+}
+
+@media (max-width: 900px) {
+    .story-stage {
+        position: relative;
+        min-height: 720px;
+    }
+
+    .story-globe-pane,
+    .story-stage.is-focused .story-globe-pane {
+        flex: 1 1 100%;
+        padding: 0.75rem;
+    }
+
+    .story-dashboard-panel,
+    .story-dashboard-panel.is-open,
+    .story-stage.is-focused .story-dashboard-panel {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: 62%;
+        flex-basis: auto;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        transform: translateY(105%);
+    }
+
+    .story-dashboard-panel.is-open,
+    .story-stage.is-focused .story-dashboard-panel {
+        transform: translateY(0);
+    }
 }
