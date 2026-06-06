@@ -2,7 +2,7 @@ Merge report
 ============
 
 Output rows: 19,388
-Output columns: 19
+Output columns: 20
 Grain: one row per Entity, Code, Year
 Year range: 1950-2023
 Entities: 262
@@ -15,6 +15,7 @@ Included sources:
 - birth-rate: 18,722 rows; measures: Birth rate
 - child-mortality-rate: 18,722 rows; measures: Child mortality rate
 - death-rate: 18,722 rows; measures: Death rate
+- fertility-rate: 19,166 rows; measures: Fertility rate
 - infant-mortality-rate: 18,722 rows; measures: Infant mortality rate
 - life-expectancy-at-birth: 18,722 rows; measures: Life expectancy at birth
 - natural-population-growth-rate: 18,722 rows; measures: Natural population growth rate

@@ -41,6 +41,9 @@ DATASETS = {
     "death-rate": {
         "file": "death-rate/death-rate.csv",
     },
+    "fertility-rate": {
+        "file": "fertility-rate/fertility-rate.csv",
+    },
     "infant-mortality-rate": {
         "file": "infant-mortality-rate/infant-mortality-rate.csv",
     },
@@ -80,6 +83,7 @@ NON_NEGATIVE_COLUMNS = [
     "Birth rate",
     "Child mortality rate",
     "Death rate",
+    "Fertility rate",
     "Infant mortality rate",
     "Life expectancy at birth",
     "Population density",
