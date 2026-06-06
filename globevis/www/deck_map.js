@@ -1,4 +1,54 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // ── Theme helpers ──
+    const getTheme = () => document.documentElement.getAttribute('data-theme') || 'dark';
+    const isDark = () => getTheme() === 'dark';
+    const setTheme = (theme) => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('globe-theme', theme);
+        applyThemeColors();
+    };
+    const toggleTheme = () => setTheme(isDark() ? 'light' : 'dark');
+
+    // Theme-aware ocean & tooltip colors
+    const oceanDark  = [8, 20, 58, 255];
+    const oceanLight = [180, 200, 220, 255];
+    const getOceanColor = () => isDark() ? oceanDark : oceanLight;
+
+    const getTooltipStyle = () => isDark() ? {
+        bg: '#161c26', border: 'rgba(255,255,255,0.15)', text: '#ffffff',
+        secondary: '#94a3b8', accent: '#818cf8', muted: '#64748b',
+    } : {
+        bg: '#ffffff', border: 'rgba(0,0,0,0.10)', text: '#0f172a',
+        secondary: '#475569', accent: '#6366f1', muted: '#94a3b8',
+    };
+
+    const applyThemeColors = () => {
+        if (!tooltip) return;
+        const s = getTooltipStyle();
+        tooltip.style.background = s.bg;
+        tooltip.style.border = `1px solid ${s.border}`;
+        tooltip.style.color = s.text;
+
+        // Recreate ocean layer with correct theme color
+        // (SolidPolygonLayer.setProps may not reliably update getFillColor)
+        oceanLayer = new deck.SolidPolygonLayer({
+            id: 'ocean',
+            data: [generateGlobePolygon()],
+            getPolygon: d => d,
+            stroked: false,
+            filled: true,
+            pickable: true,
+            getFillColor: isDark() ? oceanDark : oceanLight,
+        });
+
+        if (deckgl && lastReceivedData) {
+            renderLayers(lastReceivedData);
+        } else if (deckgl && choroplethLayer) {
+            deckgl.setProps({ layers: [oceanLayer, choroplethLayer] });
+            deckgl.redraw(true);
+        }
+    };
+
     let deckgl = null;
     let choroplethLayer = null;
     let oceanLayer = null;
@@ -16,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let rotateTimer = null;
     let isPanelOpen = false; // Tracks if Deep Dive panel is open
     let is3D = true;
+    let renderVersion = 0;   // counter for updateTriggers (avoids recreating GeoJsonLayer)
     const globeView = new deck._GlobeView({ id: 'globe' });
     const mapView = new deck.MapView({ id: 'map', repeat: true });
 
@@ -29,24 +80,25 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // ---------- Custom DOM Tooltip (no flicker during globe spin) ----------
+    const ts = getTooltipStyle();
     const tooltip = document.createElement('div');
     tooltip.id = 'globe-custom-tooltip';
     tooltip.style.cssText = `
         position: fixed;
         pointer-events: none;
         z-index: 9999;
-        background: #161c26;
-        border: 1px solid rgba(255,255,255,0.15);
+        background: ${ts.bg};
+        border: 1px solid ${ts.border};
         border-radius: 8px;
-        color: #ffffff;
+        color: ${ts.text};
         font-family: 'Inter', system-ui, sans-serif;
         font-size: 0.9rem;
         line-height: 1.5;
         padding: 10px 14px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
         max-width: 240px;
         display: none;
-        transition: opacity 0.15s ease;
+        transition: opacity 0.15s ease, background 0.3s ease, border 0.3s ease, color 0.3s ease;
         opacity: 0;
     `;
     document.body.appendChild(tooltip);
@@ -132,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
             stroked: false,
             filled: true,
             pickable: true,
-            getFillColor: [8, 20, 58, 255] // Deep midnight blue — clearly distinct from dark land
+            getFillColor: () => isDark() ? oceanDark : oceanLight, // Theme-aware ocean
         });
 
         deckgl = new deck.DeckGL({
@@ -202,21 +254,23 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else {
                             valueStr = `${countryData.raw_value.toFixed(1)} deaths per 1,000`;
                         }
+                        const tt = getTooltipStyle();
                         showTooltip(`
                             <div style="margin-bottom:4px;">
-                                <strong style="color:#818cf8;font-size:1.05em;">${countryData.country}</strong>
+                                <strong style="color:${tt.accent};font-size:1.05em;">${countryData.country}</strong>
                             </div>
-                            <div style="color:#94a3b8;font-size:0.82em;margin-bottom:2px;">
-                                Population: <span style="color:#e2e8f0;">${Math.round(countryData.pop).toLocaleString()}</span>
+                            <div style="color:${tt.secondary};font-size:0.82em;margin-bottom:2px;">
+                                Population: <span style="color:${tt.text};">${Math.round(countryData.pop).toLocaleString()}</span>
                             </div>
-                            <div style="color:#94a3b8;font-size:0.82em;">
-                                ${indicatorName}: <strong style="color:#ffffff;">${valueStr}</strong>
+                            <div style="color:${tt.secondary};font-size:0.82em;">
+                                ${indicatorName}: <strong style="color:${tt.text};">${valueStr}</strong>
                             </div>
                         `);
                     } else {
+                        const tt = getTooltipStyle();
                         showTooltip(`
-                            <strong style="color:#818cf8;">${object.properties.name}</strong>
-                            <div style="color:#64748b;font-size:0.82em;margin-top:3px;">No demographic data</div>
+                            <strong style="color:${tt.accent};">${object.properties.name}</strong>
+                            <div style="color:${tt.muted};font-size:0.82em;margin-top:3px;">No demographic data</div>
                         `);
                     }
                 } else {
@@ -297,35 +351,57 @@ document.addEventListener('DOMContentLoaded', () => {
             layers: []
         });
 
-        // Pre-fetch GeoJSON to load background Layer
+        // Pre-fetch GeoJSON and create the land layer ONCE (never recreated)
         fetch('https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson')
             .then(res => res.json())
             .then(geojson => {
                 geojsonObject = geojson;
 
-                // If we already received data from server, render it now
+                // Init feature properties with defaults
+                geojsonObject.features.forEach(f => {
+                    f.properties.fillColor = [58, 65, 78, 255];
+                    f.properties.isGroupMember = false;
+                    f.properties.isOrigin = false;
+                    f.properties.isHost = false;
+                });
+
+                // Create choropleth layer ONCE — never again
+                choroplethLayer = new deck.GeoJsonLayer({
+                    id: 'earth-land',
+                    data: geojsonObject,
+                    stroked: true,
+                    filled: true,
+                    lineWidthUnits: 'pixels',
+                    lineWidthMinPixels: 1.0,
+                    getLineWidth: f => {
+                        if (groupFocusOpen && f.properties.isGroupMember) return 4;
+                        return 1;
+                    },
+                    getLineColor: f => {
+                        if (groupFocusOpen && f.properties.isOrigin) return [255, 180, 180, 255];
+                        if (groupFocusOpen && f.properties.isHost) return [180, 245, 255, 255];
+                        if (groupFocusOpen && f.properties.isGroupMember) return [255, 255, 255, 245];
+                        return [99, 102, 241, 55];
+                    },
+                    getFillColor: f => f.properties.fillColor,
+                    pickable: true,
+                    autoHighlight: true,
+                    highlightColor: [99, 102, 241, 40],
+                    updateTriggers: {
+                        getFillColor: renderVersion,
+                        getLineColor: renderVersion,
+                        getLineWidth: renderVersion
+                    },
+                    transitions: {
+                        getFillColor: { duration: 150, type: 'interpolation' }
+                    }
+                });
+
+                deckgl.setProps({ layers: [oceanLayer, choroplethLayer] });
+
+                // If data arrived before GeoJSON, render it now
                 if (lastReceivedData) {
                     renderLayers(lastReceivedData);
-                } else {
-                    // Render default loading landmass colors — medium gray, distinct from ocean
-                    geojsonObject.features.forEach(f => {
-                        f.properties.fillColor = [58, 65, 78, 255];
-                    });
-
-                    choroplethLayer = new deck.GeoJsonLayer({
-                        id: 'earth-land',
-                        data: geojsonObject,
-                        stroked: true,
-                        filled: true,
-                        lineWidthMinPixels: 1.0,
-                        getLineColor: [99, 102, 241, 55], // Soft indigo outlines
-                        getFillColor: f => f.properties.fillColor,
-                        pickable: true,
-                        autoHighlight: true,
-                        highlightColor: [99, 102, 241, 40]
-                    });
-
-                    deckgl.setProps({ layers: [oceanLayer, choroplethLayer] });
                 }
             })
             .catch(err => {
@@ -371,16 +447,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Keep a single pulse layer instance (reused, never recreated)
+    let _pulseLayer = null;
+
     const renderLayers = (data) => {
         if (!deckgl || !geojsonObject) return;
 
-        // Map colors from Python data onto the GeoJSON features dynamically
+        // 1. Mutate GeoJSON feature properties in-place
         geojsonObject.features.forEach(f => {
             const iso = f.properties.iso_a3 ? f.properties.iso_a3.toLowerCase() : '';
-            let countryData = null;
-            if (iso && dataMap.has(iso)) {
-                countryData = dataMap.get(iso);
-            }
+            const countryData = (iso && dataMap.has(iso)) ? dataMap.get(iso) : null;
 
             if (countryData) {
                 const isGroupMember = activeGroupIsos.has(iso);
@@ -398,7 +474,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 f.properties.isOrigin = isOrigin;
                 f.properties.isHost = isHost;
             } else {
-                // No data — medium gray, clearly distinct from midnight-blue ocean
                 f.properties.fillColor = groupFocusOpen && dimNonGroup ? [24, 30, 44, 70] : [58, 65, 78, 255];
                 f.properties.isGroupMember = false;
                 f.properties.isOrigin = false;
@@ -406,21 +481,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        const pulseLayer = groupFocusOpen ? new deck.ScatterplotLayer({
-            id: 'group-pulse',
-            data: activeGroupData(),
-            getPosition: d => [d.longitude, d.latitude],
-            getRadius: 520000,
-            radiusMinPixels: 8,
-            radiusMaxPixels: 34,
-            stroked: true,
-            filled: true,
-            getFillColor: [255, 255, 255, 32],
-            getLineColor: [255, 255, 255, 220],
-            lineWidthMinPixels: 2,
-            pickable: false
-        }) : null;
+        renderVersion++;
 
+        // 2. Recreate GeoJsonLayer (deck.gl reuses WebGL buffers under the hood)
         choroplethLayer = new deck.GeoJsonLayer({
             id: 'earth-land',
             data: geojsonObject,
@@ -443,17 +506,52 @@ document.addEventListener('DOMContentLoaded', () => {
             autoHighlight: true,
             highlightColor: [99, 102, 241, 40],
             updateTriggers: {
-                getFillColor: [data, groupFocusOpen, dimNonGroup],
-                getLineColor: [data, groupFocusOpen, dimNonGroup],
-                getLineWidth: [data, groupFocusOpen]
+                getFillColor: renderVersion,
+                getLineColor: renderVersion,
+                getLineWidth: renderVersion
             },
             transitions: {
-                getFillColor: { duration: 600, type: 'interpolation' }
+                getFillColor: { duration: 150, type: 'interpolation' }
             }
         });
 
+        // 3. Handle pulse layer
         const layers = [oceanLayer, choroplethLayer];
-        if (pulseLayer) layers.push(pulseLayer);
+        if (groupFocusOpen) {
+            const pulseData = activeGroupData();
+            if (!_pulseLayer) {
+                _pulseLayer = new deck.ScatterplotLayer({
+                    id: 'group-pulse',
+                    data: pulseData,
+                    getPosition: d => [d.longitude, d.latitude],
+                    getRadius: 520000,
+                    radiusMinPixels: 8,
+                    radiusMaxPixels: 34,
+                    stroked: true,
+                    filled: true,
+                    getFillColor: [255, 255, 255, 32],
+                    getLineColor: [255, 255, 255, 220],
+                    lineWidthMinPixels: 2,
+                    pickable: false
+                });
+            } else {
+                _pulseLayer = new deck.ScatterplotLayer({
+                    id: 'group-pulse',
+                    data: pulseData,
+                    getPosition: d => [d.longitude, d.latitude],
+                    getRadius: 520000,
+                    radiusMinPixels: 8,
+                    radiusMaxPixels: 34,
+                    stroked: true,
+                    filled: true,
+                    getFillColor: [255, 255, 255, 32],
+                    getLineColor: [255, 255, 255, 220],
+                    lineWidthMinPixels: 2,
+                    pickable: false
+                });
+            }
+            layers.push(_pulseLayer);
+        }
         deckgl.setProps({ layers });
     };
 
@@ -598,5 +696,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 views: is3D ? globeView : mapView
             });
         });
+    }
+
+    // Setup Theme Toggle Button (rendered by Python in sidebar)
+    const themeBtn = document.getElementById('theme-toggle-btn');
+    if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+            toggleTheme();
+            updateThemeButtonLabel();
+            if (window.Shiny) {
+                Shiny.setInputValue('current_theme', isDark() ? 'dark' : 'light');
+            }
+        });
+    }
+
+    // Notify Shiny of initial theme (only after Shiny is fully ready)
+    if (window.Shiny && typeof Shiny.setInputValue === 'function') {
+        Shiny.setInputValue('current_theme', isDark() ? 'dark' : 'light');
+    }
+
+    const updateThemeButtonLabel = () => {
+        if (!themeBtn) return;
+        const dark = isDark();
+        themeBtn.innerHTML = dark
+            ? `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Light mode`
+            : `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Dark mode`;
+    };
+
+    // Set initial button label
+    updateThemeButtonLabel();
+
+    // Init theme from localStorage or system preference (after everything is defined)
+    const savedTheme = localStorage.getItem('globe-theme');
+    if (savedTheme) {
+        setTheme(savedTheme);
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        setTheme('light');
     }
 });

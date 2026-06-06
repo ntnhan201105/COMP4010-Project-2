@@ -1,5 +1,5 @@
 /* =====================================================================
-   Deep Dive Panel (Absolute Floating UI)
+   Deep Dive Panel (Absolute Floating UI) — Dark + Light Theme
    ===================================================================== */
 .deep-dive-panel {
     display: none;
@@ -12,7 +12,7 @@
     -webkit-backdrop-filter: blur(16px) !important;
     border: 1px solid var(--border) !important;
     border-radius: 14px;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4) !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.18) !important;
     padding: 1.2rem;
     z-index: 1000;
     color: var(--text-primary);
@@ -61,7 +61,7 @@
 
 .deep-dive-close:hover {
     background: transparent !important;
-    color: #ffffff !important;
+    color: var(--text-primary) !important;
     border: none !important;
     transform: scale(1.15);
 }
@@ -76,17 +76,16 @@
     margin-top: 1rem;
     border-radius: 8px;
     overflow: hidden;
-    background: rgba(0,0,0,0.2);
 }
 
 .vn-history-box {
     margin-top: 1rem;
-    background: rgba(99, 102, 241, 0.08);
+    background: var(--bg-history);
     border-left: 3px solid var(--accent);
     padding: 0.8rem;
     border-radius: 0 6px 6px 0;
     font-size: 0.88rem;
-    color: #cbd5e1;
+    color: var(--text-copy);
 }
 
 .vn-history-year {

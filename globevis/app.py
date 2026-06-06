@@ -218,21 +218,23 @@ def build_map_payload(df_year: pd.DataFrame, indicator: str) -> list[dict]:
     payload["color_b"] = colors[:, 2]
     payload["elevation"] = 0
 
-    payload = payload[
-        [
-            "country",
-            "iso_alpha",
-            "longitude",
-            "latitude",
-            "elevation",
-            "color_r",
-            "color_g",
-            "color_b",
-            "pop",
-            "raw_value",
-            "is_spotlight",
-        ]
+    has_pred = "is_predicted" in payload.columns
+    cols = [
+        "country",
+        "iso_alpha",
+        "longitude",
+        "latitude",
+        "elevation",
+        "color_r",
+        "color_g",
+        "color_b",
+        "pop",
+        "raw_value",
+        "is_spotlight",
     ]
+    if has_pred:
+        cols.append("is_predicted")
+    payload = payload[cols]
     payload = payload.astype(object).where(pd.notna(payload), None)
     return payload.to_dict(orient="records")
 
@@ -258,6 +260,27 @@ def story_intro(title: str, *paragraphs: str):
 app_ui = ui.page_sidebar(
     ui.sidebar(
         ui.h2("Scars on the Map", class_="mb-4"),
+        ui.tags.button(
+            ui.HTML(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" '
+                'viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+                'stroke-width="2" stroke-linecap="round" stroke-linejoin="round" '
+                'style="margin-right:4px;"><circle cx="12" cy="12" r="5"/>'
+                '<line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>'
+                '<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>'
+                '<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>'
+                '<line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>'
+                '<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>'
+                '<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg> Light mode'
+            ),
+            id="theme-toggle-btn",
+            class_="theme-toggle-btn",
+        ),
+        ui.input_checkbox(
+            "show_projections",
+            "Show ML projections to 2040",
+            value=False,
+        ),
         ui.input_slider(
             "timeline_year",
             "Select Year",
@@ -317,14 +340,6 @@ app_ui = ui.page_sidebar(
                 id="view-toggle-btn",
                 class_="view-toggle-btn",
             ),
-            class_="story-globe-pane",
-        ),
-        ui.div(
-            ui.div(
-                ui.output_ui("story_dashboard_header_text"),
-                ui.input_action_button("close_story_panel", "Close", class_="story-panel-close"),
-                class_="story-dashboard-header",
-            ),
             ui.div(
                 ui.div(
                     ui.output_ui("deep_dive_title"),
@@ -335,6 +350,14 @@ app_ui = ui.page_sidebar(
                 ui.div(output_widget("deep_dive_plot"), class_="deep-dive-plot"),
                 ui.output_ui("deep_dive_history_text"),
                 class_="deep-dive-panel",
+            ),
+            class_="story-globe-pane",
+        ),
+        ui.div(
+            ui.div(
+                ui.output_ui("story_dashboard_header_text"),
+                ui.input_action_button("close_story_panel", "Close", class_="story-panel-close"),
+                class_="story-dashboard-header",
             ),
             ui.panel_conditional(
                 "input.indicator == 'net_migration_rate'",
@@ -384,6 +407,15 @@ app_ui = ui.page_sidebar(
                         ui.card_header("Lowest Fertility Ranking"),
                         output_widget("fertility_lowest_ranking"),
                     ),
+                    story_intro(
+                        "Extinction Watch",
+                        "If current trends continue, some countries face fertility rates so low that their populations could halve within a generation. Below are the 12 countries projected to have the lowest fertility by 2040.",
+                        "Diamond markers show where each country stood in 2023. The red bars show where linear regression projects them in 2040.",
+                    ),
+                    ui.card(
+                        ui.card_header("Lowest Projected Fertility 2040"),
+                        output_widget("extinction_watch"),
+                    ),
                     class_="story-dashboard-body",
                 ),
             ),
@@ -399,6 +431,46 @@ app_ui = ui.page_sidebar(
 def server(input, output, session):
     selected_country = reactive.Value(None)
     story_panel_open = reactive.Value(False)
+    theme = reactive.Value("dark")
+
+    @reactive.Calc
+    def plotly_template() -> str:
+        return "plotly_dark" if theme.get() == "dark" else "plotly_white"
+
+    def _chart_theme() -> dict:
+        """Return theme-aware style dict for Plotly chart elements."""
+        dark = theme.get() == "dark"
+        return {
+            "template": "plotly_dark" if dark else "plotly_white",
+            "gridcolor": "rgba(255,255,255,0.07)" if dark else "rgba(0,0,0,0.08)",
+            "hover_bg": "rgba(15,23,42,0.96)" if dark else "rgba(255,255,255,0.96)",
+            "hover_font": "#f8fafc" if dark else "#0f172a",
+            "hover_border": "#818cf8" if dark else "#6366f1",
+            "legend_bg": "rgba(15,23,42,0.78)" if dark else "rgba(255,255,255,0.85)",
+            "legend_font": "#f8fafc" if dark else "#0f172a",
+            "text_primary": "#f0f4ff" if dark else "#0f172a",
+            "text_secondary": "#94a3b8" if dark else "#475569",
+        }
+
+    @reactive.Effect
+    @reactive.event(input.current_theme)
+    def handle_theme_change():
+        theme.set(input.current_theme())
+
+    @reactive.Calc
+    def has_predictions() -> bool:
+        return "is_predicted" in df_full.columns and df_full["is_predicted"].any()
+
+    @reactive.Calc
+    def effective_max_year() -> int:
+        if has_predictions() and input.show_projections():
+            return max_year
+        return 2023
+
+    @reactive.Effect
+    @reactive.event(input.show_projections)
+    def _sync_slider_range():
+        ui.update_slider("timeline_year", max=effective_max_year())
 
     @reactive.Calc
     def active_story() -> str | None:
@@ -431,11 +503,7 @@ def server(input, output, session):
         story_id = active_story()
         if story_id not in STORY_CONFIGS:
             return None
-        label = (
-            "See the story charts about low vs high migration rate"
-            if story_id == "migration"
-            else "See the story charts about ultra-low birth rate (fertility)"
-        )
+        label = "See story charts about this lens"
         return ui.div(
             ui.input_action_button("open_story", label, class_="story-open-button"),
             class_="story-sidebar-block",
@@ -445,6 +513,8 @@ def server(input, output, session):
     def story_country_filter():
         story_id = active_story()
         if story_id not in STORY_CONFIGS:
+            return None
+        if not story_panel_open.get():
             return None
         return ui.div(
             ui.input_selectize(
@@ -460,8 +530,7 @@ def server(input, output, session):
     @reactive.Effect
     @reactive.event(input.indicator)
     def handle_indicator_change():
-        if active_story() not in STORY_CONFIGS:
-            story_panel_open.set(False)
+        story_panel_open.set(False)
 
     @reactive.Effect
     @reactive.event(input.open_story)
@@ -573,47 +642,105 @@ def server(input, output, session):
             class_="vn-history-box",
         )
 
+    # ── Deep Dive FigureWidget (pre-allocated, never recreated) ──────
+    _dd_fig = go.FigureWidget()
+    _dd_fig.update_layout(
+        template="plotly_dark",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=20, r=20, t=18, b=36),
+        height=220,
+        showlegend=False,
+        hovermode="x unified",
+        hoverlabel=dict(
+            bgcolor="rgba(15, 23, 42, 0.96)",
+            bordercolor="#818cf8",
+            font=dict(color="#f8fafc", size=12),
+        ),
+    )
+    _dd_fig.update_xaxes(title_text="Year", gridcolor="rgba(255,255,255,0.07)")
+    _dd_fig.update_yaxes(title_text="", gridcolor="rgba(255,255,255,0.07)")
+    # Pre-allocate traces: [0] hist, [1] pred, [2] bridge, [3] vline
+    _dd_fig.add_scatter(x=[], y=[], mode="lines", line=dict(color="#818cf8", width=2.5), name="")
+    _dd_fig.add_scatter(x=[], y=[], mode="lines", line=dict(color="#818cf8", width=2, dash="dash"), name="")
+    _dd_fig.add_scatter(x=[], y=[], mode="lines", line=dict(color="#818cf8", width=1.5, dash="dot"), showlegend=False, hoverinfo="skip")
+    _dd_fig.add_vline(x=2023, line_width=2, line_dash="dash", line_color="#ef4444")
+
     @render_widget
     def deep_dive_plot():
+        return _dd_fig
+
+    @reactive.Effect
+    def _update_deep_dive_data():
+        """Full update — country, indicator, or projection toggle changed."""
         iso = selected_country.get()
-        fig = go.Figure()
         if not iso:
-            return fig
+            with _dd_fig.batch_update():
+                _dd_fig.data[0].x = []
+                _dd_fig.data[0].y = []
+                _dd_fig.data[1].x = []
+                _dd_fig.data[1].y = []
+                _dd_fig.data[2].x = []
+                _dd_fig.data[2].y = []
+            return
 
         indicator = input.indicator()
         config = INDICATOR_CONFIG[indicator]
         country_df = df_countries[df_countries["iso_alpha"].eq(iso)].sort_values("year")
         if country_df.empty:
-            return fig
+            return
 
+        has_pred = has_predictions() and input.show_projections()
+        if has_pred and "is_predicted" in country_df.columns:
+            hist = country_df[country_df["is_predicted"] == False]
+            pred = country_df[country_df["is_predicted"] == True]
+        else:
+            hist = country_df
+            pred = pd.DataFrame()
+
+        with _dd_fig.batch_update():
+            # Trace 0: historical
+            if not hist.empty:
+                _dd_fig.data[0].x = hist["year"].tolist()
+                _dd_fig.data[0].y = hist[config["col"]].tolist()
+            else:
+                _dd_fig.data[0].x = []
+                _dd_fig.data[0].y = []
+
+            # Trace 1: predicted
+            if not pred.empty:
+                _dd_fig.data[1].x = pred["year"].tolist()
+                _dd_fig.data[1].y = pred[config["col"]].tolist()
+            else:
+                _dd_fig.data[1].x = []
+                _dd_fig.data[1].y = []
+
+            # Trace 2: bridge
+            if not hist.empty and not pred.empty:
+                _dd_fig.data[2].x = [int(hist["year"].iloc[-1]), int(pred["year"].iloc[0])]
+                _dd_fig.data[2].y = [float(hist[config["col"]].iloc[-1]), float(pred[config["col"]].iloc[0])]
+            else:
+                _dd_fig.data[2].x = []
+                _dd_fig.data[2].y = []
+
+            # Update all theme-dependent properties
+            ct = _chart_theme()
+            _dd_fig.layout.template = ct["template"]
+            _dd_fig.layout.yaxis.title.text = config["unit"]
+            _dd_fig.layout.yaxis.gridcolor = ct["gridcolor"]
+            _dd_fig.layout.xaxis.gridcolor = ct["gridcolor"]
+            _dd_fig.layout.hoverlabel.bgcolor = ct["hover_bg"]
+            _dd_fig.layout.hoverlabel.bordercolor = ct["hover_border"]
+            _dd_fig.layout.hoverlabel.font.color = ct["hover_font"]
+
+    @reactive.Effect
+    def _update_deep_dive_vline():
+        """Lightweight update — only move the vertical year marker."""
         year = input.timeline_year()
-        fig.add_scatter(
-            x=country_df["year"],
-            y=country_df[config["col"]],
-            mode="lines",
-            line=dict(color="#818cf8", width=2),
-            name=config["label"],
-            hovertemplate="%{x}<br>%{y:.2f}<extra></extra>",
-        )
-        fig.add_vline(x=year, line_width=2, line_dash="dash", line_color="#ef4444")
-        fig.update_layout(
-            title=None,
-            template="plotly_dark",
-            plot_bgcolor="rgba(0,0,0,0)",
-            paper_bgcolor="rgba(0,0,0,0)",
-            margin=dict(l=20, r=20, t=18, b=36),
-            height=220,
-            showlegend=False,
-            hovermode="x unified",
-            hoverlabel=dict(
-                bgcolor="rgba(15, 23, 42, 0.96)",
-                bordercolor="#818cf8",
-                font=dict(color="#f8fafc", size=12),
-            ),
-        )
-        fig.update_xaxes(title_text="Year", gridcolor="rgba(255,255,255,0.07)")
-        fig.update_yaxes(title_text=config["unit"], gridcolor="rgba(255,255,255,0.07)")
-        return fig
+        if len(_dd_fig.layout.shapes) > 0:
+            with _dd_fig.batch_update():
+                _dd_fig.layout.shapes[0].x0 = year
+                _dd_fig.layout.shapes[0].x1 = year
 
     def legend_bar(gradient: str, left: str, middle: str, right: str) -> ui.TagList:
         return ui.TagList(
@@ -621,19 +748,19 @@ def server(input, output, session):
                 style=(
                     "height: 12px; border-radius: 6px; "
                     f"background: {gradient}; "
-                    "margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.1);"
+                    "margin-bottom: 8px; border: 1px solid var(--border-accent);"
                 )
             ),
             ui.div(
-                ui.span(left, style="font-size: 0.8rem; color: #e2e8f0; font-weight: 600;"),
+                ui.span(left, style="font-size: 0.8rem; color: var(--text-primary); font-weight: 600;"),
                 ui.span(
                     middle,
                     style=(
-                        "font-size: 0.8rem; color: #cbd5e1; font-weight: 600; "
+                        "font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; "
                         "position: absolute; left: 50%; transform: translateX(-50%);"
                     ),
                 ),
-                ui.span(right, style="font-size: 0.8rem; color: #e2e8f0; font-weight: 600; float: right;"),
+                ui.span(right, style="font-size: 0.8rem; color: var(--text-primary); font-weight: 600; float: right;"),
                 style="position: relative; overflow: visible; height: 20px;",
             ),
             ui.div(style="margin-bottom: 20px;"),
@@ -737,6 +864,42 @@ def server(input, output, session):
             },
         )
 
+    def add_country_lines(
+        fig: go.Figure,
+        country_df: pd.DataFrame,
+        col: str,
+        name: str,
+        color: str,
+        width: float = 2.7,
+        dash_solid: str = "solid",
+        dash_pred: str = "dash",
+        show_pred: bool = True,
+    ) -> None:
+        """Add historical (solid) + predicted (dashed) traces for a country."""
+        has_pred = has_predictions() and show_pred and input.show_projections()
+        if has_pred and "is_predicted" in country_df.columns:
+            hist = country_df[country_df["is_predicted"] == False].sort_values("year")
+            pred = country_df[country_df["is_predicted"] == True].sort_values("year")
+        else:
+            hist = country_df.sort_values("year")
+            pred = pd.DataFrame()
+
+        if not hist.empty:
+            fig.add_scatter(
+                x=hist["year"], y=hist[col],
+                mode="lines",
+                name=name,
+                line=dict(color=color, width=width, dash=dash_solid),
+            )
+        if not pred.empty:
+            fig.add_scatter(
+                x=pred["year"], y=pred[col],
+                mode="lines",
+                name=f"{name} (projected)",
+                line=dict(color=color, width=width * 0.75, dash=dash_pred),
+                showlegend=True,
+            )
+
     def add_conflict_shading(fig: go.Figure, isos: list[str]) -> None:
         for iso in isos:
             for period in history_db.get(iso, []):
@@ -750,18 +913,19 @@ def server(input, output, session):
                 )
 
     def apply_story_layout(fig: go.Figure, y_title: str, height: int = 390) -> go.Figure:
+        ct = _chart_theme()
         fig.update_layout(
             title=None,
-            template="plotly_dark",
+            template=ct["template"],
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
             margin=dict(l=30, r=24, t=24, b=94),
             height=height,
             hovermode="x unified",
             hoverlabel=dict(
-                bgcolor="rgba(15, 23, 42, 0.96)",
-                bordercolor="#818cf8",
-                font=dict(color="#f8fafc", size=12),
+                bgcolor=ct["hover_bg"],
+                bordercolor=ct["hover_border"],
+                font=dict(color=ct["hover_font"], size=12),
             ),
             legend=dict(
                 orientation="h",
@@ -769,15 +933,15 @@ def server(input, output, session):
                 y=-0.18,
                 xanchor="left",
                 x=0,
-                bgcolor="rgba(15, 23, 42, 0.78)",
-                bordercolor="rgba(255,255,255,0.10)",
+                bgcolor=ct["legend_bg"],
+                bordercolor=ct["gridcolor"],
                 borderwidth=1,
-                font=dict(color="#f8fafc", size=12),
+                font=dict(color=ct["legend_font"], size=12),
             ),
         )
-        fig.update_traces(hoverlabel=dict(bgcolor="rgba(15, 23, 42, 0.96)", font=dict(color="#f8fafc")))
-        fig.update_xaxes(title_text="Year", title_standoff=12, gridcolor="rgba(255,255,255,0.07)")
-        fig.update_yaxes(title_text=y_title, gridcolor="rgba(255,255,255,0.07)")
+        fig.update_traces(hoverlabel=dict(bgcolor=ct["hover_bg"], font=dict(color=ct["hover_font"])))
+        fig.update_xaxes(title_text="Year", title_standoff=12, gridcolor=ct["gridcolor"])
+        fig.update_yaxes(title_text=y_title, gridcolor=ct["gridcolor"])
         return fig
 
     @render_widget
@@ -791,16 +955,12 @@ def server(input, output, session):
         for iso in selected_isos:
             country_df = df_countries[df_countries["iso_alpha"].eq(iso)].sort_values("year")
             is_outflow = iso in MIGRATION_OUTFLOW
-            fig.add_scatter(
-                x=country_df["year"],
-                y=country_df["net_migration_rate"],
-                mode="lines",
+            add_country_lines(
+                fig, country_df, "net_migration_rate",
                 name=country_name(iso),
-                line=dict(
-                    color=COUNTRY_META[iso]["color"],
-                    width=3 if is_outflow else 2.4,
-                    dash="solid" if is_outflow else "dot",
-                ),
+                color=COUNTRY_META[iso]["color"],
+                width=3 if is_outflow else 2.4,
+                dash_solid="solid" if is_outflow else "dot",
             )
 
         fig.add_hline(y=0, line_width=1, line_dash="dot", line_color="#94a3b8")
@@ -860,22 +1020,17 @@ def server(input, output, session):
 
         if not df_world.empty:
             world = df_world.sort_values("year")
-            fig.add_scatter(
-                x=world["year"],
-                y=world["fertility_rate"],
-                mode="lines",
-                name="World",
-                line=dict(color="#e2e8f0", width=3, dash="dot"),
+            add_country_lines(
+                fig, world, "fertility_rate",
+                name="World", color="#e2e8f0", width=3, dash_solid="dot",
             )
 
         for iso in selected_isos:
             country_df = df_countries[df_countries["iso_alpha"].eq(iso)].sort_values("year")
-            fig.add_scatter(
-                x=country_df["year"],
-                y=country_df["fertility_rate"],
-                mode="lines",
+            add_country_lines(
+                fig, country_df, "fertility_rate",
                 name=country_name(iso),
-                line=dict(color=COUNTRY_META[iso]["color"], width=2.7),
+                color=COUNTRY_META[iso]["color"], width=2.7,
             )
 
         fig.add_hline(
@@ -945,5 +1100,83 @@ def server(input, output, session):
         fig.update_yaxes(automargin=True)
         return fig
 
+
+    @render_widget
+    def extinction_watch():
+        """Show countries projected to have critically low fertility by 2040."""
+        if open_story_id() != "fertility":
+            return go.Figure()
+        if not has_predictions() or not input.show_projections():
+            return go.Figure()
+
+        year_now = 2023
+        year_future = 2040
+
+        # Get 2023 and 2040 data
+        df_2023 = df_countries[
+            df_countries["year"].eq(year_now)
+            & df_countries["fertility_rate"].notna()
+            & df_countries["pop"].fillna(0).gt(500_000)
+        ].copy()
+        df_2040 = df_countries[
+            df_countries["year"].eq(year_future)
+            & df_countries["fertility_rate"].notna()
+            & df_countries["pop"].fillna(0).gt(500_000)
+        ].copy()
+
+        if df_2040.empty:
+            return go.Figure()
+
+        # Top 12 lowest predicted fertility in 2040
+        top12 = df_2040.nsmallest(12, "fertility_rate").sort_values("fertility_rate", ascending=True)
+        selected = set(selected_story_isos())
+
+        fig = go.Figure()
+
+        # 2040 predicted bar
+        fig.add_bar(
+            y=top12["country"],
+            x=top12["fertility_rate"],
+            orientation="h",
+            name="2040 projected",
+            marker_color=[
+                COUNTRY_META.get(iso, {}).get("color", "#ef4444") if iso in selected else "#ef4444"
+                for iso in top12["iso_alpha"]
+            ],
+            text=[f"{v:.2f}" for v in top12["fertility_rate"]],
+            textposition="auto",
+            hovertemplate="%{y}<br>2040: %{x:.2f}<extra></extra>",
+        )
+
+        # 2023 marker overlay
+        iso_2023_map = {}
+        for _, r in df_2023.iterrows():
+            iso_2023_map[r["iso_alpha"]] = r["fertility_rate"]
+
+        markers_2023 = [iso_2023_map.get(iso, None) for iso in top12["iso_alpha"]]
+        fig.add_scatter(
+            x=markers_2023,
+            y=top12["country"],
+            mode="markers",
+            name="2023 actual",
+            marker=dict(color="#f8fafc", size=10, symbol="diamond", line=dict(color="#0f172a", width=1)),
+            hovertemplate="%{y}<br>2023: %{x:.2f}<extra></extra>",
+        )
+
+        fig.add_vline(x=2.1, line_width=2, line_dash="dash", line_color="#94a3b8")
+        fig.add_annotation(
+            x=2.1, y=0.98, yref="paper",
+            text="Replacement 2.1",
+            showarrow=False,
+            font=dict(color="#cbd5e1", size=11),
+        )
+
+        fig = apply_story_layout(fig, "Children per woman", 430)
+        fig.update_layout(showlegend=True, margin=dict(l=30, r=24, t=24, b=54),
+                          legend=dict(orientation="h", yanchor="top", y=-0.18, xanchor="left", x=0,
+                                      bgcolor="rgba(15, 23, 42, 0.78)", bordercolor="rgba(255,255,255,0.10)",
+                                      borderwidth=1, font=dict(color="#f8fafc", size=12)))
+        fig.update_yaxes(automargin=True)
+        return fig
 
 app = App(app_ui, server)
