@@ -1,0 +1,455 @@
+/* =====================================================================
+   Demographic Globe Explorer — Premium Dark Theme
+   Palette: Deep space navy + Electric violet/indigo accent
+   ===================================================================== */
+
+/* Google Font import */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ---------- CSS Custom Properties (single source of truth) ---------- */
+:root {
+    --accent:        #818cf8;   /* indigo-400  */
+    --accent-strong: #6366f1;   /* indigo-500  */
+    --accent-dim:    rgba(99, 102, 241, 0.18);
+    --accent-glow:   rgba(99, 102, 241, 0.35);
+    --bg-deep:       #080b12;
+    --bg-base:       #0d1117;
+    --bg-panel:      rgba(18, 24, 36, 0.88);
+    --bg-surface:    rgba(26, 32, 48, 0.70);
+    --border:        rgba(255, 255, 255, 0.09);
+    --border-accent: rgba(99, 102, 241, 0.35);
+    --text-primary:  #f0f4ff;
+    --text-secondary:#94a3b8;
+    --text-muted:    rgba(148, 163, 184, 0.6);
+}
+
+/* ---------- Base ---------- */
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden !important;
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+::selection        { background: var(--accent-glow) !important; color: #fff !important; }
+::-moz-selection   { background: var(--accent-glow) !important; color: #fff !important; }
+
+/* ---------- Sidebar ---------- */
+.bslib-sidebar-layout .sidebar,
+.bslib-sidebar-layout .bslib-sidebar {
+    background: var(--bg-panel) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border-right: 1px solid var(--border) !important;
+    box-shadow: 4px 0 30px rgba(0, 0, 0, 0.45) !important;
+    padding: 1.5rem !important;
+    overflow-y: auto !important;
+}
+
+/* Sidebar text */
+.sidebar, .bslib-sidebar, .bslib-sidebar-layout,
+.sidebar p, .bslib-sidebar p,
+.sidebar label, .bslib-sidebar label,
+.sidebar .form-label, .bslib-sidebar .form-label,
+.sidebar .control-label, .bslib-sidebar .control-label,
+.control-label, .form-label {
+    color: var(--text-primary) !important;
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* Sidebar h2 — brand title */
+.sidebar h2, .bslib-sidebar h2, h2.mb-4, h2 {
+    font-weight: 700 !important;
+    font-size: 1.5rem !important;
+    background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 60%, #6366f1 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    margin-bottom: 1.5rem !important;
+    letter-spacing: -0.3px;
+}
+
+.sidebar h4, .bslib-sidebar h4, h4 {
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    margin-top: 1rem !important;
+    margin-bottom: 1rem !important;
+}
+
+/* ---------- Select Dropdown ---------- */
+select, .form-select, select.form-control, .shiny-input-select, .bslib-sidebar select {
+    background-color: rgba(26, 32, 48, 0.9) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--border-accent) !important;
+    border-radius: 7px !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.93rem !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23818cf8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.75rem center !important;
+    background-size: 16px 12px !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+select:focus, .form-select:focus, select.form-control:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-glow) !important;
+    outline: none !important;
+}
+
+select option {
+    background-color: #1a2030 !important;
+    color: #ffffff !important;
+}
+
+/* ---------- Sidebar HR ---------- */
+.bslib-sidebar-layout .bslib-sidebar hr {
+    border-color: var(--border) !important;
+    margin: 1.5rem 0 !important;
+}
+
+/* ---------- IonRangeSlider ---------- */
+.irs { font-family: inherit !important; }
+
+.irs-line {
+    background: rgba(255, 255, 255, 0.08) !important;
+    height: 5px !important;
+    border: none !important;
+    border-radius: 3px !important;
+}
+
+.irs-bar {
+    background: linear-gradient(90deg, #6366f1, #818cf8) !important;
+    height: 5px !important;
+    border: none !important;
+}
+
+.irs-slider {
+    width: 17px !important;
+    height: 17px !important;
+    top: 21px !important;
+    background: #ffffff !important;
+    border: 2px solid var(--accent) !important;
+    border-radius: 50% !important;
+    box-shadow: 0 0 10px var(--accent-glow) !important;
+    cursor: pointer !important;
+    transition: transform 0.15s ease !important;
+}
+
+.irs-slider:hover { transform: scale(1.2) !important; }
+
+/* ---------- Play/Pause Animate Button ---------- */
+/* Clean inline-flex — no position tricks on <i> tags (they break Shiny's toggle) */
+.slider-animate-button, .slider-animate-container a,
+.shiny-bound-input .slider-animate-button {
+    background: linear-gradient(135deg, #6366f1, #818cf8) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 50% !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    box-shadow: 0 0 14px var(--accent-glow) !important;
+    margin-top: 12px !important;
+    margin-left: 2px !important;
+    cursor: pointer !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    text-decoration: none !important;
+    font-size: 0.85rem !important;
+    line-height: 1 !important;
+}
+
+.slider-animate-button:hover, .slider-animate-container a:hover {
+    transform: scale(1.15) !important;
+    background: linear-gradient(135deg, #818cf8, #a5b4fc) !important;
+    box-shadow: 0 0 20px rgba(129, 140, 248, 0.6) !important;
+    color: #ffffff !important;
+}
+
+/* Icon: only set color and size, NEVER touch display or position */
+.slider-animate-button i, .slider-animate-container a i {
+    color: #ffffff !important;
+    font-size: 0.85rem !important;
+    line-height: 1 !important;
+}
+
+/* ---------- Slider Labels ---------- */
+.irs-min, .irs-max {
+    background: transparent !important;
+    color: var(--text-muted) !important;
+    border: none !important;
+    font-weight: 500 !important;
+    font-size: 0.78rem !important;
+    padding: 2px 4px !important;
+    top: -5px !important;
+    text-shadow: none !important;
+}
+
+.irs-single, .irs-from, .irs-to {
+    background: rgba(26, 32, 48, 0.95) !important;
+    color: var(--accent) !important;
+    border: 1px solid var(--border-accent) !important;
+    font-weight: 700 !important;
+    font-size: 0.8rem !important;
+    border-radius: 5px !important;
+    padding: 2px 7px !important;
+    top: -5px !important;
+}
+
+.irs-grid-text {
+    color: var(--text-muted) !important;
+    font-size: 0.72rem !important;
+}
+
+.irs-grid-pol { background: rgba(255, 255, 255, 0.15) !important; }
+
+/* ---------- Indicator Exposition ---------- */
+.exposition-title {
+    color: var(--accent) !important;
+    font-weight: 700 !important;
+    font-size: 1.2rem !important;
+    margin-bottom: 0.9rem !important;
+    border-left: 3px solid var(--accent-strong) !important;
+    padding-left: 9px !important;
+    background: transparent !important;
+    letter-spacing: -0.1px;
+}
+
+#indicator_exposition p {
+    color: #b8c4d8 !important;
+    font-size: 0.93rem !important;
+    line-height: 1.65 !important;
+    margin-bottom: 1.2rem !important;
+    background: transparent !important;
+}
+
+#indicator_exposition h5 {
+    color: var(--text-primary) !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem !important;
+    margin-top: 1.2rem !important;
+    margin-bottom: 0.6rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    background: transparent !important;
+    opacity: 0.7;
+}
+
+#indicator_exposition ul {
+    padding-left: 1.1rem !important;
+    margin-bottom: 0 !important;
+    background: transparent !important;
+}
+
+#indicator_exposition li {
+    color: #c8d4e8 !important;
+    font-size: 0.88rem !important;
+    line-height: 1.55 !important;
+    margin-bottom: 0.65rem !important;
+    background: transparent !important;
+}
+
+/* ---------- Navbar ---------- */
+.navbar, .navbar-default, [class*="navbar-expand"] {
+    background: rgba(8, 11, 18, 0.92) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-bottom: 1px solid var(--border) !important;
+    padding: 0.65rem 1.5rem !important;
+    box-shadow: 0 2px 24px rgba(0, 0, 0, 0.5) !important;
+}
+
+.navbar-brand, .navbar-title, .navbar .navbar-brand, .navbar-brand a {
+    background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 60%, #6366f1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700 !important;
+    font-size: 1.3rem !important;
+    letter-spacing: -0.3px;
+}
+
+.navbar .nav-link {
+    color: rgba(240, 246, 252, 0.65) !important;
+    font-weight: 500 !important;
+    font-size: 0.92rem !important;
+    padding: 0.45rem 1rem !important;
+    margin: 0 0.2rem !important;
+    border-radius: 5px !important;
+    transition: all 0.25s ease !important;
+}
+
+.navbar .nav-link:hover {
+    color: #ffffff !important;
+    background-color: var(--accent-dim) !important;
+}
+
+.navbar .nav-link.active {
+    color: #ffffff !important;
+    background-color: var(--accent-dim) !important;
+    border-bottom: 2px solid var(--accent) !important;
+    font-weight: 600 !important;
+}
+
+/* ---------- Cards (2D Analytics) ---------- */
+.card {
+    background: var(--bg-surface) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35) !important;
+    margin-top: 1rem;
+}
+
+.card-header {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-bottom: 1px solid var(--border) !important;
+    font-weight: 600 !important;
+    color: var(--accent) !important;
+    font-size: 1.02rem !important;
+    padding: 0.75rem 1.25rem !important;
+}
+
+/* ---------- Globe Container ---------- */
+#deck-map-container {
+    background: radial-gradient(ellipse at center,
+        rgba(30, 20, 60, 0.5) 0%,
+        rgba(13, 17, 23, 1) 68%) !important;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* ---------- Sidebar Toggle Button ---------- */
+.bslib-sidebar-layout > .collapse-toggle,
+.bslib-sidebar-layout .sidebar-toggle,
+button.collapse-toggle {
+    background: rgba(18, 24, 36, 0.95) !important;
+    border: 1px solid var(--border-accent) !important;
+    color: var(--accent) !important;
+    border-radius: 50% !important;
+    width: 30px !important;
+    height: 30px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 2px 14px var(--accent-dim) !important;
+    transition: all 0.25s ease !important;
+    z-index: 100 !important;
+    cursor: pointer !important;
+}
+
+.bslib-sidebar-layout > .collapse-toggle:hover,
+button.collapse-toggle:hover {
+    background: var(--accent-dim) !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 2px 20px var(--accent-glow) !important;
+    transform: scale(1.12) !important;
+}
+
+.bslib-sidebar-layout > .collapse-toggle svg,
+button.collapse-toggle svg {
+    fill: var(--accent) !important;
+    color: var(--accent) !important;
+}
+
+/* Smooth expand/collapse transition */
+.bslib-sidebar-layout > .main {
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Generalized History Box Styling */
+.history-header-block {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+}
+
+.history-period-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.history-period-title {
+    font-size: 1.05rem;
+    color: #ffffff;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.history-details {
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: #cbd5e1 !important;
+    margin-top: 6px;
+    margin-bottom: 8px;
+}
+
+.history-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding-top: 4px;
+    margin-top: 6px;
+    text-align: right;
+}
+
+.history-source {
+    font-size: 0.72rem;
+    font-style: italic;
+    color: var(--text-muted);
+}
+
+/* ---------- View Toggle Button (Bottom-Right Floating UI) ---------- */
+.view-toggle-btn {
+    position: absolute;
+    bottom: -50px;
+    right: 20px;
+    z-index: 1000;
+    background: rgba(18, 24, 36, 0.75) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid var(--border-accent) !important;
+    color: var(--text-primary) !important;
+    padding: 10px 16px !important;
+    border-radius: 30px !important;
+    font-weight: 600 !important;
+    font-size: 0.88rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    line-height: 1 !important;
+}
+
+.view-toggle-btn:hover {
+    background: var(--accent-strong) !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 20px var(--accent-glow) !important;
+    transform: translateY(-2px) !important;
+}
+
+.view-toggle-btn svg {
+    transition: transform 0.3s ease !important;
+}
+
+.view-toggle-btn:hover svg {
+    transform: rotate(15deg) scale(1.1) !important;
+}

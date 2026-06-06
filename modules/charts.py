@@ -43,8 +43,23 @@ def set_theme_dark(dark: bool):
     _theme_dark = dark
 
 
+def _sanitize_nan(fig: go.Figure) -> go.Figure:
+    """Lightweight NaN clean for trace data arrays. Global monkey-patch handles the rest."""
+    import math
+    for trace in fig.data:
+        for key in ('x', 'y', 'z', 'text', 'values', 'labels'):
+            try:
+                arr = getattr(trace, key, None)
+                if arr is not None and hasattr(arr, '__iter__') and not isinstance(arr, (str, dict)):
+                    setattr(trace, key, [None if isinstance(v, float) and (math.isnan(v) or math.isinf(v)) else v for v in arr])
+            except Exception:
+                pass
+    return fig
+
+
 def clean_template(fig: go.Figure) -> go.Figure:
     """Apply consistent theme to a figure (light or dark)."""
+    _sanitize_nan(fig)
     if _theme_dark:
         fig.update_layout(
             plot_bgcolor='#1e2130',
@@ -79,7 +94,7 @@ def clean_template(fig: go.Figure) -> go.Figure:
         )
     fig.update_layout(
         colorway=['#2d7fb8', '#cf4b3f', '#1f9d68', '#d78921', '#7c5fb8', '#256d78'],
-        transition=dict(duration=180, easing='cubic-in-out'),
+        transition=dict(duration=90, easing='cubic-in-out'),
         uirevision='demographic-dashboard',
     )
     fig.update_xaxes(showline=True, linewidth=1, ticks='outside', ticklen=3)
@@ -1666,6 +1681,224 @@ def generate_country_insight(country: str, year: int = 2023) -> str:
     )
 
     return insight
+
+
+# ═══════════════════════════════════════════════════════════════
+# Story charts — Migration & Fertility (adapted from globevis)
+# ═══════════════════════════════════════════════════════════════
+
+STORY_META = {
+    "SYR": {"name": "Syria", "color": "#ef4444"},
+    "YEM": {"name": "Yemen", "color": "#fb7185"},
+    "ARE": {"name": "United Arab Emirates", "color": "#22d3ee"},
+    "QAT": {"name": "Qatar", "color": "#38bdf8"},
+    "KWT": {"name": "Kuwait", "color": "#67e8f9"},
+    "OMN": {"name": "Oman", "color": "#0ea5e9"},
+    "KOR": {"name": "South Korea", "color": "#ef4444"},
+    "TWN": {"name": "Taiwan", "color": "#fb7185"},
+    "HKG": {"name": "Hong Kong", "color": "#f97316"},
+    "JPN": {"name": "Japan", "color": "#f59e0b"},
+}
+
+MIGRATION_OUTFLOW = ["SYR", "YEM"]
+MIGRATION_INFLOW = ["ARE", "QAT", "KWT", "OMN"]
+FERTILITY_ISOS = ["KOR", "TWN", "HKG", "JPN"]
+
+
+def _story_layout(fig: go.Figure, y_title: str, height: int = 390) -> go.Figure:
+    """Shared story chart layout — dark, clean, horizontal legend."""
+    _sanitize_nan(fig)
+    fig.update_layout(
+        title=None,
+        template=_theme_template(),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        margin=dict(l=30, r=24, t=24, b=70),
+        height=height,
+        hovermode="x unified",
+        hoverlabel=dict(
+            bgcolor="rgba(15, 23, 42, 0.96)",
+            bordercolor="#818cf8",
+            font=dict(color="#f8fafc", size=12),
+        ),
+        legend=dict(
+            orientation="h",
+            yanchor="top", y=-0.16,
+            xanchor="left", x=0,
+            bgcolor="rgba(15, 23, 42, 0.78)",
+            bordercolor="rgba(255,255,255,0.10)",
+            borderwidth=1,
+            font=dict(color="#f8fafc", size=11),
+        ),
+    )
+    fig.update_traces(hoverlabel=dict(bgcolor="rgba(15, 23, 42, 0.96)", font=dict(color="#f8fafc")))
+    fig.update_xaxes(title_text="Year", gridcolor="rgba(255,255,255,0.07)")
+    fig.update_yaxes(title_text=y_title, gridcolor="rgba(255,255,255,0.07)")
+    return fig
+
+
+def _theme_template():
+    """Return the appropriate plotly template based on dark mode."""
+    try:
+        from .charts import _theme_dark
+        return "plotly_dark" if _theme_dark else "plotly_white"
+    except Exception:
+        return "plotly_white"
+
+
+def story_country_name(iso: str) -> str:
+    if iso in STORY_META:
+        return STORY_META[iso]["name"]
+    df = load_master_dataset()
+    row = df[df["Code"] == iso]
+    return iso if row.empty else row["Entity"].iloc[0]
+
+
+def migration_story_lines(selected_isos: list[str], history_db: dict = None) -> go.Figure:
+    """Net migration over time — outflow (SYR/YEM) vs inflow (Gulf)."""
+    df = load_master_dataset()
+    fig = go.Figure()
+
+    for iso in selected_isos:
+        cdf = df[df["Code"] == iso].dropna(subset=["Net migration rate"]).sort_values("Year")
+        if cdf.empty:
+            continue
+        is_outflow = iso in MIGRATION_OUTFLOW
+        meta = STORY_META.get(iso, {})
+        fig.add_scatter(
+            x=cdf["Year"],
+            y=cdf["Net migration rate"],
+            mode="lines",
+            name=story_country_name(iso),
+            line=dict(
+                color=meta.get("color", "#94a3b8"),
+                width=3 if is_outflow else 2.4,
+                dash="solid" if is_outflow else "dot",
+            ),
+        )
+
+    fig.add_hline(y=0, line_width=1, line_dash="dot", line_color="#94a3b8")
+    return _story_layout(fig, "Migrants per 1,000 people", 420)
+
+
+def migration_peak_shocks(selected_isos: list[str]) -> go.Figure:
+    """Peak migration shock bar chart — worst outflow vs strongest inflow."""
+    df = load_master_dataset()
+    rows = []
+    for iso in selected_isos:
+        cdf = df[df["Code"] == iso]
+        if cdf.empty or cdf["Net migration rate"].isna().all():
+            continue
+        if iso in MIGRATION_OUTFLOW:
+            row = cdf.loc[cdf["Net migration rate"].idxmin()]
+            vtype = "Worst outflow"
+        else:
+            row = cdf.loc[cdf["Net migration rate"].idxmax()]
+            vtype = "Strongest inflow"
+        rows.append({
+            "country": story_country_name(iso),
+            "iso": iso,
+            "value": float(row["Net migration rate"]),
+            "year": int(row["Year"]),
+            "type": vtype,
+        })
+
+    rows = sorted(rows, key=lambda r: r["value"])
+    fig = go.Figure()
+    fig.add_bar(
+        y=[r["country"] for r in rows],
+        x=[r["value"] for r in rows],
+        orientation="h",
+        marker_color=["#ef4444" if r["iso"] in MIGRATION_OUTFLOW else "#22d3ee" for r in rows],
+        text=[f"{r['value']:+.1f} ({r['year']})" for r in rows],
+        textposition="auto",
+        hovertemplate="%{y}<br>%{x:+.2f} per 1,000<extra></extra>",
+    )
+    fig.add_vline(x=0, line_width=1, line_dash="dot", line_color="#e2e8f0")
+    fig = _story_layout(fig, "Net migration rate", 390)
+    fig.update_yaxes(automargin=True)
+    fig.update_layout(showlegend=False, margin=dict(l=30, r=24, t=24, b=50))
+    return fig
+
+
+def fertility_replacement_lines(selected_isos: list[str]) -> go.Figure:
+    """Fertility rate vs 2.1 replacement benchmark — East Asia cluster."""
+    df = load_master_dataset()
+    fig = go.Figure()
+
+    # World average line
+    world = df[df["Entity"] == "World"].sort_values("Year")
+    if not world.empty:
+        fig.add_scatter(
+            x=world["Year"], y=world["Fertility rate"],
+            mode="lines", name="World",
+            line=dict(color="#e2e8f0", width=3, dash="dot"),
+        )
+
+    for iso in selected_isos:
+        cdf = df[df["Code"] == iso].dropna(subset=["Fertility rate"]).sort_values("Year")
+        if cdf.empty:
+            continue
+        meta = STORY_META.get(iso, {})
+        fig.add_scatter(
+            x=cdf["Year"], y=cdf["Fertility rate"],
+            mode="lines", name=story_country_name(iso),
+            line=dict(color=meta.get("color", "#94a3b8"), width=2.7),
+        )
+
+    fig.add_hline(
+        y=2.1, line_width=2, line_dash="dash", line_color="#94a3b8",
+        annotation_text="Replacement 2.1", annotation_position="top left",
+    )
+
+    # Annotate Korea's lowest point
+    kor = df[df["Code"] == "KOR"]
+    kor = kor[kor["Fertility rate"].notna()]
+    if not kor.empty:
+        low = kor.loc[kor["Fertility rate"].idxmin()]
+        fig.add_annotation(
+            x=int(low["Year"]), y=float(low["Fertility rate"]),
+            text=f"Korea {low['Fertility rate']:.2f}",
+            showarrow=True, arrowhead=2, ax=-18, ay=-34,
+            font=dict(size=11, color="#f8fafc"),
+        )
+
+    return _story_layout(fig, "Children per woman", 420)
+
+
+def fertility_lowest_ranking(year: int, selected_isos: list[str]) -> go.Figure:
+    """Top 12 lowest fertility countries in selected year — East Asia highlighted."""
+    df = load_master_dataset()
+    ydf = df[
+        (df["Year"] == year)
+        & df["Fertility rate"].notna()
+        & df["Population"].fillna(0).gt(500_000)
+    ].copy()
+    ydf = ydf.nsmallest(12, "Fertility rate").sort_values("Fertility rate", ascending=True)
+    selected = set(selected_isos)
+
+    fig = go.Figure()
+    fig.add_bar(
+        y=ydf["Entity"],
+        x=ydf["Fertility rate"],
+        orientation="h",
+        marker_color=[
+            STORY_META.get(iso, {}).get("color", "#64748b") if iso in selected else "#64748b"
+            for iso in ydf["Code"]
+        ],
+        text=[f"{v:.2f}" for v in ydf["Fertility rate"]],
+        textposition="auto",
+        hovertemplate="%{y}<br>%{x:.2f} children per woman<extra></extra>",
+    )
+    fig.add_vline(x=2.1, line_width=2, line_dash="dash", line_color="#94a3b8")
+    fig.add_annotation(
+        x=2.1, y=0.98, yref="paper", text="Replacement 2.1",
+        showarrow=False, font=dict(color="#cbd5e1", size=11),
+    )
+    fig = _story_layout(fig, "Children per woman", 430)
+    fig.update_yaxes(autorange="reversed")
+    fig.update_layout(showlegend=False, margin=dict(l=30, r=24, t=24, b=50))
+    return fig
 
 
 if __name__ == "__main__":

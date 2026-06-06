@@ -2,7 +2,7 @@
     function syncThemeButton() {
         var isDark = document.documentElement.getAttribute("data-theme") === "dark";
         document.querySelectorAll(".theme-toggle .icon-slot").forEach(function (el) {
-            el.textContent = isDark ? "L" : "D";
+            el.textContent = isDark ? "\u2600" : "\u263E";
             el.setAttribute("aria-hidden", "true");
         });
         document.querySelectorAll(".theme-toggle").forEach(function (btn) {

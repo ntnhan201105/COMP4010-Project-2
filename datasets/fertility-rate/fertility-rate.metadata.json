@@ -1,0 +1,39 @@
+{
+  "chart": {
+    "subtitle": "The total fertility rate summarizes the total number of births a woman would have if she experienced the birth rates seen in women of each age group in one particular year across her childbearing years.",
+    "citation": "UN, World Population Prospects (2024)",
+    "originalChartUrl": "https://ourworldindata.org/explorers/population-and-demography?indicator=Fertility+rate&Sex=Both+sexes&Age=Total&Projection+scenario=None&country=CHN~IND~USA~IDN~PAK~NGA~BRA~JPN",
+    "selection": [
+      "China",
+      "India",
+      "United States",
+      "Indonesia",
+      "Pakistan",
+      "Nigeria",
+      "Brazil",
+      "Japan"
+    ]
+  },
+  "columns": {
+    "Fertility rate - Sex: all - Age: all - Variant: estimates": {
+      "titleShort": "Fertility rate",
+      "titleLong": "Fertility rate - UN WPP",
+      "descriptionShort": "The total fertility rate: the average number of children a woman would have if she experienced the year's age-specific birth rates throughout her childbearing years.",
+      "descriptionKey": [
+        "The UN's projections come in three scenarios: medium, high, and low. The medium scenario is the central estimate; the high and low scenarios are designed to fully reach 0.5 births per woman above and below the medium from the mid-2030s onward (e.g. medium 2.1 → high 2.6, low 1.6). In the first decade of the projection the gap is narrower (about ±0.25 in 2024–2028, ±0.4 in 2029–2033)."
+      ],
+      "descriptionProcessing": "The UN doesn't publish a total fertility rate for our continental aggregates (Africa, Asia, Europe, North America, South America, Oceania), since its own regional groupings differ. We derive these by summing the age-specific fertility rates across the 5-year reproductive age groups (15–19 to 45–49) and multiplying by 5, where each age-specific rate uses regional totals for births and female population.",
+      "unit": "live births per woman",
+      "timespan": "1950-2023",
+      "type": "Numeric",
+      "owidVariableId": 950920,
+      "shortName": "fertility_rate__sex_all__age_all__variant_estimates",
+      "lastUpdated": "2024-07-12",
+      "citationShort": "UN, World Population Prospects (2024) – processed by Our World in Data",
+      "citationLong": "UN, World Population Prospects (2024) – processed by Our World in Data. “Fertility rate – UN WPP” [dataset]. United Nations, “World Population Prospects”; United Nations, “World Population Prospects - Interim Update” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/950920.metadata.json"
+    }
+  },
+  "dateDownloaded": "2026-06-05",
+  "activeFilters": {}
+}

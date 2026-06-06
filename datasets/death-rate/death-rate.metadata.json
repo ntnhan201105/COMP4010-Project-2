@@ -1,0 +1,40 @@
+{
+  "chart": {
+    "title": "Death rate",
+    "subtitle": "Annual number of deaths per 1,000 people in the total population.",
+    "note": "Estimates may be uncertain for countries with poor vital registration systems.",
+    "citation": "UN, World Population Prospects (2024)",
+    "originalChartUrl": "https://ourworldindata.org/explorers/population-and-demography?indicator=Death+rate&Sex=Both+sexes&Age=Total&Projection+scenario=None&country=CHN~IND~USA~IDN~PAK~NGA~BRA~JPN",
+    "selection": [
+      "China",
+      "India",
+      "United States",
+      "Indonesia",
+      "Pakistan",
+      "Nigeria",
+      "Brazil",
+      "Japan"
+    ]
+  },
+  "columns": {
+    "Death rate - Sex: all - Age: all - Variant: estimates": {
+      "titleShort": "Death rate",
+      "titleLong": "Death rate - UN WPP",
+      "descriptionShort": "The number of deaths in a year per 1,000 people in the population.",
+      "descriptionKey": [
+        "This is a *crude* death rate — it is not adjusted for differences in age structure between countries. Even when two countries have similar mortality at each age, the country with an older population will report a higher crude death rate."
+      ],
+      "unit": "deaths per 1,000 people",
+      "timespan": "1950-2023",
+      "type": "Numeric",
+      "owidVariableId": 950691,
+      "shortName": "death_rate__sex_all__age_all__variant_estimates",
+      "lastUpdated": "2024-07-12",
+      "citationShort": "UN, World Population Prospects (2024) – processed by Our World in Data",
+      "citationLong": "UN, World Population Prospects (2024) – processed by Our World in Data. “Death rate – UN WPP” [dataset]. United Nations, “World Population Prospects”; United Nations, “World Population Prospects - Interim Update” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/950691.metadata.json"
+    }
+  },
+  "dateDownloaded": "2026-05-17",
+  "activeFilters": {}
+}

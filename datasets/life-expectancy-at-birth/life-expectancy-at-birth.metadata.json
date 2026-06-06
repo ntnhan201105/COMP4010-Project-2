@@ -1,0 +1,41 @@
+{
+  "chart": {
+    "subtitle": "The period life expectancy is the age to which a newborn can expect to live, if age-specific mortality rates in the current year were to stay the same throughout their life.",
+    "citation": "UN, World Population Prospects (2024)",
+    "originalChartUrl": "https://ourworldindata.org/explorers/population-and-demography?indicator=Life+expectancy&Sex=Both+sexes&Age=At+birth&Projection+scenario=None&country=CHN~IND~USA~IDN~PAK~NGA~BRA~JPN",
+    "selection": [
+      "China",
+      "India",
+      "United States",
+      "Indonesia",
+      "Pakistan",
+      "Nigeria",
+      "Brazil",
+      "Japan"
+    ]
+  },
+  "columns": {
+    "Life expectancy - Sex: all - Age: 0 - Variant: estimates": {
+      "titleShort": "Life expectancy at birth",
+      "titleLong": "Life expectancy at birth - UN WPP",
+      "descriptionShort": "Period life expectancy at birth.",
+      "descriptionKey": [
+        "This is period life expectancy — a snapshot of mortality rates in a single year. It does *not* follow a real generation of people; it tells you how long someone would live if the year's age-specific death rates stayed the same for the rest of their life.",
+        "Future values are the mean of thousands of trajectories simulated by the UN. When fitting its projection model, the UN excluded observed life expectancies for 2020 to 2023 so COVID-19's temporary impact wouldn't distort the long-run trend."
+      ],
+      "descriptionProcessing": "For ages above 0, the UN reports life expectancy as the years a person at that age has left to live. We add the starting age back so the chart shows the *expected age at death* — for example, a 65-year-old with 17 years remaining is shown as 82.",
+      "shortUnit": "years",
+      "unit": "years",
+      "timespan": "1950-2023",
+      "type": "Numeric",
+      "owidVariableId": 950927,
+      "shortName": "life_expectancy__sex_all__age_0__variant_estimates",
+      "lastUpdated": "2024-07-12",
+      "citationShort": "UN, World Population Prospects (2024) – processed by Our World in Data",
+      "citationLong": "UN, World Population Prospects (2024) – processed by Our World in Data. “Life expectancy at birth – UN WPP” [dataset]. United Nations, “World Population Prospects”; United Nations, “World Population Prospects - Interim Update” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/950927.metadata.json"
+    }
+  },
+  "dateDownloaded": "2026-05-17",
+  "activeFilters": {}
+}

@@ -106,6 +106,7 @@ def run_clustering(n_clusters: int = 4, year: int = 2023) -> pd.DataFrame:
     return result
 
 
+@lru_cache(maxsize=512)
 def get_similar_countries(country: str, top_n: int = 5, year: int = 2023) -> pd.DataFrame:
     """
     Return the top-N most demographically similar countries using cosine similarity.
@@ -130,6 +131,7 @@ def get_similar_countries(country: str, top_n: int = 5, year: int = 2023) -> pd.
     return results.head(top_n)[['Entity', 'Code', 'Similarity']]
 
 
+@lru_cache(maxsize=1024)
 def forecast_indicator(country: str, indicator: str, forecast_years: int = 15) -> dict:
     """
     Simple linear regression forecast for a given country + indicator.
@@ -164,6 +166,7 @@ def forecast_indicator(country: str, indicator: str, forecast_years: int = 15) -
     }
 
 
+@lru_cache(maxsize=512)
 def get_demographic_profile(country: str, year: int = 2023) -> dict:
     """Get a summary demographic profile for a single country."""
     df = load_master_dataset()

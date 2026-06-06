@@ -1,0 +1,6 @@
+shiny
+shinywidgets
+pydeck
+plotly
+pandas
+pyarrow
