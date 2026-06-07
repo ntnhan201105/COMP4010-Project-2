@@ -57,21 +57,45 @@ SOCIOECONOMIC_METRICS = {
     "population_growth_rate": "Population growth",
 }
 
+CB = {
+    "blue": "#0072B2",
+    "sky": "#56B4E9",
+    "teal": "#009E73",
+    "orange": "#E69F00",
+    "yellow": "#F0E442",
+    "vermillion": "#D55E00",
+    "purple": "#CC79A7",
+    "gray": "#94A3B8",
+    "dark_neutral": "#161C34",
+    "light_text": "#F8FAFC",
+}
+CB_RGB = {
+    "blue": (0, 114, 178),
+    "sky": (86, 180, 233),
+    "teal": (0, 158, 115),
+    "orange": (230, 159, 0),
+    "yellow": (240, 228, 66),
+    "vermillion": (213, 94, 0),
+    "purple": (204, 121, 167),
+    "gray": (148, 163, 184),
+    "dark_neutral": (22, 28, 52),
+}
+
 COUNTRY_META = {
-    "SYR": {"name": "Syria", "color": "#ef4444", "role": "Conflict origin"},
-    "VEN": {"name": "Venezuela", "color": "#f97316", "role": "Conflict origin"},
-    "TUR": {"name": "Turkey", "color": "#22d3ee", "role": "Regional host"},
-    "LBN": {"name": "Lebanon", "color": "#67e8f9", "role": "Regional host"},
-    "JOR": {"name": "Jordan", "color": "#38bdf8", "role": "Regional host"},
-    "COL": {"name": "Colombia", "color": "#0ea5e9", "role": "Regional host"},
-    "PER": {"name": "Peru", "color": "#06b6d4", "role": "Regional host"},
-    "KOR": {"name": "South Korea", "color": "#ef4444", "role": "Ultra-low fertility"},
-    "TWN": {"name": "Taiwan", "color": "#fb7185", "role": "Ultra-low fertility"},
-    "JPN": {"name": "Japan", "color": "#f97316", "role": "Ultra-low fertility"},
-    "CHN": {"name": "China", "color": "#a78bfa", "role": "Scale shift"},
-    "NER": {"name": "Niger", "color": "#22c55e", "role": "High-fertility contrast"},
-    "TCD": {"name": "Chad", "color": "#84cc16", "role": "High-fertility contrast"},
-    "MLI": {"name": "Mali", "color": "#14b8a6", "role": "High-fertility contrast"},
+    "SYR": {"name": "Syria", "color": CB["vermillion"], "role": "Conflict origin"},
+    "VEN": {"name": "Venezuela", "color": CB["orange"], "role": "Conflict origin"},
+    "TUR": {"name": "Turkey", "color": CB["blue"], "role": "Regional host"},
+    "LBN": {"name": "Lebanon", "color": CB["sky"], "role": "Regional host"},
+    "JOR": {"name": "Jordan", "color": CB["teal"], "role": "Regional host"},
+    "COL": {"name": "Colombia", "color": CB["purple"], "role": "Regional host"},
+    "PER": {"name": "Peru", "color": CB["yellow"], "role": "Regional host"},
+    "KOR": {"name": "South Korea", "color": CB["blue"], "role": "Ultra-low fertility"},
+    "TWN": {"name": "Taiwan", "color": CB["sky"], "role": "Ultra-low fertility"},
+    "JPN": {"name": "Japan", "color": CB["purple"], "role": "Ultra-low fertility"},
+    "CHN": {"name": "China", "color": CB["yellow"], "role": "Scale shift"},
+    "NER": {"name": "Niger", "color": CB["orange"], "role": "High-fertility contrast"},
+    "TCD": {"name": "Chad", "color": CB["vermillion"], "role": "High-fertility contrast"},
+    "MLI": {"name": "Mali", "color": CB["teal"], "role": "High-fertility contrast"},
 }
 
 REFUGEE_COUNTRY_CHOICES = {iso: COUNTRY_META[iso]["name"] for iso in REFUGEE_ISOS}
@@ -262,14 +286,14 @@ min_year = int(df_full["year"].min())
 max_year = int(df_full["year"].max())
 VALID_ISOS = set(df_countries["iso_alpha"].dropna().unique())
 FALLBACK_PALETTE = [
-    "#a78bfa",
-    "#34d399",
-    "#fbbf24",
-    "#f472b6",
-    "#60a5fa",
-    "#fb923c",
-    "#2dd4bf",
-    "#e879f9",
+    CB["blue"],
+    CB["orange"],
+    CB["teal"],
+    CB["purple"],
+    CB["sky"],
+    CB["vermillion"],
+    CB["yellow"],
+    CB["gray"],
 ]
 
 
@@ -347,22 +371,22 @@ def three_stop_colors(
 
 def net_migration_colors(values: pd.Series) -> np.ndarray:
     arr = pd.to_numeric(values, errors="coerce").to_numpy(dtype=float)
-    colors = np.tile(np.array([22, 28, 52], dtype=float), (len(arr), 1))
+    colors = np.tile(np.array(CB_RGB["dark_neutral"], dtype=float), (len(arr), 1))
     mask = np.isfinite(arr)
     if not mask.any():
         return colors.astype(int)
 
-    neutral = np.array([22, 28, 52], dtype=float)
-    red = np.array([240, 40, 60], dtype=float)
-    cyan = np.array([0, 210, 255], dtype=float)
+    neutral = np.array(CB_RGB["dark_neutral"], dtype=float)
+    outflow = np.array(CB_RGB["vermillion"], dtype=float)
+    inflow = np.array(CB_RGB["sky"], dtype=float)
     vals = arr[mask]
     valid_colors = np.empty((len(vals), 3), dtype=float)
 
     negative = vals < 0
     neg_t = np.clip(np.abs(vals[negative]) / 100, 0, 1)
     pos_t = np.clip(vals[~negative] / 50, 0, 1)
-    valid_colors[negative] = neutral + (red - neutral) * neg_t[:, None]
-    valid_colors[~negative] = neutral + (cyan - neutral) * pos_t[:, None]
+    valid_colors[negative] = neutral + (outflow - neutral) * neg_t[:, None]
+    valid_colors[~negative] = neutral + (inflow - neutral) * pos_t[:, None]
     colors[mask] = valid_colors
     return colors.astype(int)
 
@@ -374,9 +398,9 @@ def fertility_colors(values: pd.Series) -> np.ndarray:
     if not mask.any():
         return colors.astype(int)
 
-    low = np.array([239, 68, 68], dtype=float)
-    replacement = np.array([148, 163, 184], dtype=float)
-    high = np.array([16, 217, 122], dtype=float)
+    low = np.array(CB_RGB["blue"], dtype=float)
+    replacement = np.array(CB_RGB["gray"], dtype=float)
+    high = np.array(CB_RGB["orange"], dtype=float)
     vals = arr[mask]
     valid_colors = np.empty((len(vals), 3), dtype=float)
 
@@ -399,11 +423,11 @@ def build_map_payload(df_year: pd.DataFrame, indicator: str) -> list[dict]:
     elif indicator == "fertility_rate":
         colors = fertility_colors(values)
     elif indicator == "life_expectancy":
-        colors = three_stop_colors(values, 20, 85, (239, 68, 68), (251, 191, 36), (16, 217, 122))
+        colors = three_stop_colors(values, 20, 85, CB_RGB["vermillion"], CB_RGB["yellow"], CB_RGB["blue"])
     elif indicator == "child_mortality":
-        colors = three_stop_colors(values, 0, 35, (16, 217, 122), (251, 191, 36), (239, 68, 68))
+        colors = three_stop_colors(values, 0, 35, CB_RGB["blue"], CB_RGB["yellow"], CB_RGB["vermillion"])
     else:
-        colors = three_stop_colors(values, 5, 18, (16, 217, 122), (251, 191, 36), (239, 68, 68))
+        colors = three_stop_colors(values, 5, 18, CB_RGB["blue"], CB_RGB["yellow"], CB_RGB["vermillion"])
 
     payload["raw_value"] = values
     payload["color_r"] = colors[:, 0]
@@ -1188,17 +1212,17 @@ def server(input, output, session):
         hovermode="x unified",
         hoverlabel=dict(
             bgcolor="rgba(15, 23, 42, 0.96)",
-            bordercolor="#818cf8",
+            bordercolor=CB["blue"],
             font=dict(color="#f8fafc", size=12),
         ),
     )
     _dd_fig.update_xaxes(title_text="Year", gridcolor="rgba(255,255,255,0.07)")
     _dd_fig.update_yaxes(title_text="", gridcolor="rgba(255,255,255,0.07)")
     # Pre-allocate traces: [0] hist, [1] pred, [2] bridge, [3] vline
-    _dd_fig.add_scatter(x=[], y=[], mode="lines", line=dict(color="#818cf8", width=2.5), name="")
-    _dd_fig.add_scatter(x=[], y=[], mode="lines", line=dict(color="#818cf8", width=2, dash="dash"), name="")
-    _dd_fig.add_scatter(x=[], y=[], mode="lines", line=dict(color="#818cf8", width=1.5, dash="dot"), showlegend=False, hoverinfo="skip")
-    _dd_fig.add_vline(x=2023, line_width=2, line_dash="dash", line_color="#ef4444")
+    _dd_fig.add_scatter(x=[], y=[], mode="lines", line=dict(color=CB["blue"], width=2.5), name="")
+    _dd_fig.add_scatter(x=[], y=[], mode="lines", line=dict(color=CB["blue"], width=2, dash="dash"), name="")
+    _dd_fig.add_scatter(x=[], y=[], mode="lines", line=dict(color=CB["blue"], width=1.5, dash="dot"), showlegend=False, hoverinfo="skip")
+    _dd_fig.add_vline(x=2023, line_width=2, line_dash="dash", line_color=CB["vermillion"])
 
     @render_widget
     def deep_dive_plot():
@@ -1307,11 +1331,11 @@ def server(input, output, session):
             return ui.TagList(
                 ui.h4("Lens: Migration Rate", class_="exposition-title"),
                 ui.p(
-                    "A highlight lens for the story view. Deep red marks net outflow; cyan marks net inflow."
+                    "A highlight lens for the story view. Warm orange marks net outflow; blue marks net inflow."
                 ),
                 ui.h5("Map Legend:"),
                 legend_bar(
-                    "linear-gradient(to right, #f02840, #161c34, #00d2ff)",
+                    f"linear-gradient(to right, {CB['vermillion']}, {CB['dark_neutral']}, {CB['sky']})",
                     "Outflow",
                     "Neutral",
                     "Inflow",
@@ -1321,11 +1345,11 @@ def server(input, output, session):
             return ui.TagList(
                 ui.h4("Lens: Fertility Rate", class_="exposition-title"),
                 ui.p(
-                    "A highlight lens for the story view. Red marks ultra-low fertility; gray marks replacement level near 2.1; green marks high fertility."
+                    "A highlight lens for the story view. Blue marks ultra-low fertility; gray marks replacement level near 2.1; orange marks high fertility."
                 ),
                 ui.h5("Map Legend:"),
                 legend_bar(
-                    "linear-gradient(to right, #ef4444 0%, #94a3b8 38%, #10d97a 100%)",
+                    f"linear-gradient(to right, {CB['blue']} 0%, {CB['gray']} 38%, {CB['orange']} 100%)",
                     "0.7",
                     "2.1 replacement",
                     "5.5+",
@@ -1337,7 +1361,7 @@ def server(input, output, session):
                 ui.p("Low values mark survival collapse; high values mark long-life societies."),
                 ui.h5("Map Legend:"),
                 legend_bar(
-                    "linear-gradient(to right, #ef4444, #fbbf24, #10d97a)",
+                    f"linear-gradient(to right, {CB['vermillion']}, {CB['yellow']}, {CB['blue']})",
                     "20 yrs",
                     "52 yrs",
                     "85 yrs",
@@ -1346,10 +1370,10 @@ def server(input, output, session):
         if indicator == "child_mortality":
             return ui.TagList(
                 ui.h4("Lens: Child Mortality", class_="exposition-title"),
-                ui.p("Green means low mortality; red means children are dying at elevated rates."),
+                ui.p("Blue means low mortality; warm orange means children are dying at elevated rates."),
                 ui.h5("Map Legend:"),
                 legend_bar(
-                    "linear-gradient(to right, #10d97a, #fbbf24, #ef4444)",
+                    f"linear-gradient(to right, {CB['blue']}, {CB['yellow']}, {CB['vermillion']})",
                     "0%",
                     "17.5%",
                     "35%+",
@@ -1357,10 +1381,10 @@ def server(input, output, session):
             )
         return ui.TagList(
             ui.h4("Lens: Death Rate", class_="exposition-title"),
-            ui.p("Green means low annual mortality; red marks elevated death rates."),
+            ui.p("Blue means low annual mortality; warm orange marks elevated death rates."),
             ui.h5("Map Legend:"),
             legend_bar(
-                "linear-gradient(to right, #10d97a, #fbbf24, #ef4444)",
+                f"linear-gradient(to right, {CB['blue']}, {CB['yellow']}, {CB['vermillion']})",
                 "5",
                 "11.5",
                 "18+",
@@ -1440,7 +1464,7 @@ def server(input, output, session):
                 fig.add_vrect(
                     x0=period["start"],
                     x1=period["end"],
-                    fillcolor=COUNTRY_META.get(iso, {}).get("color", "#ef4444"),
+                    fillcolor=COUNTRY_META.get(iso, {}).get("color", CB["vermillion"]),
                     opacity=0.08,
                     line_width=0,
                     layer="below",
@@ -1488,7 +1512,7 @@ def server(input, output, session):
         fig.add_vrect(
             x0=start,
             x1=end,
-            fillcolor="#818cf8",
+            fillcolor=CB["sky"],
             opacity=0.12,
             line_width=0,
             layer="below",
@@ -1514,13 +1538,13 @@ def server(input, output, session):
                 hovertemplate="%{x}<br>%{y:+.2f} per 1,000<extra></extra>",
             )
 
-        fig.add_hline(y=0, line_width=1, line_dash="dot", line_color="#94a3b8")
+        fig.add_hline(y=0, line_width=1, line_dash="dot", line_color=CB["gray"])
         year_marker = int(np.clip(chart_year(), 1990, 2022))
         fig.add_vline(x=year_marker, line_width=1.5, line_dash="dash", line_color="#e2e8f0")
         fig = apply_story_layout(fig, "Migrants per 1,000 people", 420)
         ct = _chart_theme()
         if "SYR" in selected_isos:
-            fig.add_vline(x=2013, line_width=1.5, line_dash="dash", line_color="#ef4444")
+            fig.add_vline(x=2013, line_width=1.5, line_dash="dash", line_color=CB["vermillion"])
             fig.add_annotation(
                 x=2013,
                 y=1.03,
@@ -1536,7 +1560,7 @@ def server(input, output, session):
             fig.add_vrect(
                 x0=2018,
                 x1=2019,
-                fillcolor="#f97316",
+                fillcolor=CB["orange"],
                 opacity=0.12,
                 line_width=0,
                 layer="below",
@@ -1621,7 +1645,7 @@ def server(input, output, session):
             x=current["share"],
             orientation="h",
             name=str(peak_year),
-            marker_color=COUNTRY_META.get(iso, {}).get("color", "#818cf8"),
+            marker_color=COUNTRY_META.get(iso, {}).get("color", CB["blue"]),
             hovertemplate=f"{peak_year}<br>%{{y}}: %{{x:.1f}}%<extra></extra>",
         )
         fig = apply_story_layout(fig, f"{country_name(iso)} population share", 360)
@@ -1642,7 +1666,7 @@ def server(input, output, session):
                 y=hist["net_migration_rate"],
                 mode="lines",
                 name="Historical 1990-2022",
-                line=dict(color=COUNTRY_META.get(iso, {}).get("color", "#ef4444"), width=3),
+                line=dict(color=COUNTRY_META.get(iso, {}).get("color", CB["vermillion"]), width=3),
                 hovertemplate="%{x}<br>%{y:+.2f} per 1,000<extra></extra>",
             )
         if not forecast.empty:
@@ -1650,8 +1674,8 @@ def server(input, output, session):
                 x=list(forecast["year"]) + list(forecast["year"])[::-1],
                 y=list(forecast["upper"]) + list(forecast["lower"])[::-1],
                 fill="toself",
-                fillcolor="rgba(129, 140, 248, 0.18)",
-                line=dict(color="rgba(129, 140, 248, 0)"),
+                fillcolor="rgba(86, 180, 233, 0.20)",
+                line=dict(color="rgba(86, 180, 233, 0)"),
                 name="95% interval",
                 hoverinfo="skip",
             )
@@ -1660,11 +1684,11 @@ def server(input, output, session):
                 y=forecast["mean"],
                 mode="lines",
                 name="Forecast mean",
-                line=dict(color="#a5b4fc", width=2.8, dash="dash"),
+                line=dict(color=CB["sky"], width=2.8, dash="dash"),
                 hovertemplate="%{x}<br>%{y:+.2f} per 1,000<extra></extra>",
             )
         fig.add_vline(x=2022, line_width=1.5, line_dash="dot", line_color="#e2e8f0")
-        fig.add_hline(y=0, line_width=1, line_dash="dot", line_color="#94a3b8")
+        fig.add_hline(y=0, line_width=1, line_dash="dot", line_color=CB["gray"])
         fig = apply_story_layout(fig, f"{country_name(iso)} migrants per 1,000", 400)
         fig.update_xaxes(range=[1990, 2030])
         return fig
@@ -1711,9 +1735,9 @@ def server(input, output, session):
             x=[row["value"] for row in rows],
             orientation="h",
             marker_color=[
-                "#ef4444"
+                CB["vermillion"]
                 if row["iso"] in MIGRATION_OUTFLOW
-                else ("#22d3ee" if row["iso"] in MIGRATION_INFLOW else "#94a3b8")
+                else (CB["blue"] if row["iso"] in MIGRATION_INFLOW else CB["gray"])
                 for row in rows
             ],
             text=[f"{row['value']:+.1f} ({row['year']})" for row in rows],
@@ -1742,7 +1766,7 @@ def server(input, output, session):
                     y=world["fertility_rate"],
                     mode="lines",
                     name="World fertility",
-                    line=dict(color="#e2e8f0", width=2.5, dash="dot"),
+                    line=dict(color=CB["light_text"], width=2.5, dash="dot"),
                     hovertemplate="%{x}<br>%{y:.2f} children per woman<extra></extra>",
                 ),
             )
@@ -1779,7 +1803,7 @@ def server(input, output, session):
             y=2.1,
             line_width=2,
             line_dash="dash",
-            line_color="#94a3b8",
+            line_color=CB["gray"],
             annotation_text="Replacement 2.1",
             annotation_position="top left",
         )
@@ -1797,7 +1821,7 @@ def server(input, output, session):
                     arrowhead=2,
                     ax=-18,
                     ay=-34,
-                    font=dict(size=11, color="#f8fafc"),
+                    font=dict(size=11, color=CB["light_text"]),
                 )
 
         ct = _chart_theme()
@@ -1847,7 +1871,7 @@ def server(input, output, session):
             x=current["share"],
             orientation="h",
             name=str(int(current["year"].iloc[0])) if not current.empty else str(compare_year),
-            marker_color=COUNTRY_META.get(iso, {}).get("color", "#ef4444"),
+            marker_color=COUNTRY_META.get(iso, {}).get("color", CB["blue"]),
             hovertemplate="%{fullData.name}<br>%{y}: %{x:.1f}%<extra></extra>",
         )
         fig = apply_story_layout(fig, f"{country_name(iso)} population share", 360)
@@ -1898,7 +1922,7 @@ def server(input, output, session):
                 marker=dict(
                     color=line_color(iso, idx),
                     size=13,
-                    line=dict(color="#f8fafc", width=1.4),
+                    line=dict(color=CB["light_text"], width=1.4),
                 ),
                 hovertemplate="%{text}<br>%{x:.2f}<br>%{y:.2f} children per woman<extra></extra>",
             )
@@ -1921,7 +1945,7 @@ def server(input, output, session):
                 y=y_line,
                 mode="lines",
                 name="Global trend",
-                line=dict(color="#f8fafc", width=2, dash="dash"),
+                line=dict(color=CB["light_text"], width=2, dash="dash"),
                 hoverinfo="skip",
             )
 
@@ -1947,7 +1971,16 @@ def server(input, output, session):
             return fig
 
         selected_set = set(selected_story_isos())
-        cluster_palette = ["#818cf8", "#22d3ee", "#ef4444", "#22c55e", "#f59e0b", "#e879f9", "#14b8a6", "#94a3b8"]
+        cluster_palette = [
+            CB["blue"],
+            CB["orange"],
+            CB["teal"],
+            CB["purple"],
+            CB["sky"],
+            CB["vermillion"],
+            CB["yellow"],
+            CB["gray"],
+        ]
         for idx, cluster in enumerate(sorted(frame["cluster"].unique())):
             cluster_df = frame[frame["cluster"].eq(cluster)]
             fig.add_scatter(
@@ -1959,7 +1992,7 @@ def server(input, output, session):
                     color=cluster_palette[idx % len(cluster_palette)],
                     size=np.where(cluster_df["iso_alpha"].isin(selected_set), 14, 7),
                     opacity=np.where(cluster_df["iso_alpha"].isin(selected_set), 0.95, 0.55),
-                    line=dict(color="#f8fafc", width=np.where(cluster_df["iso_alpha"].isin(selected_set), 1.4, 0)),
+                    line=dict(color=CB["light_text"], width=np.where(cluster_df["iso_alpha"].isin(selected_set), 1.4, 0)),
                 ),
                 text=cluster_df["country"],
                 customdata=cluster_df[["fertility_rate", "elder_share", "population_growth_rate"]],
@@ -2005,14 +2038,14 @@ def server(input, output, session):
             x=year_df["fertility_rate"],
             orientation="h",
             marker_color=[
-                COUNTRY_META.get(iso, {}).get("color", "#64748b") if iso in selected else "#64748b"
+                COUNTRY_META.get(iso, {}).get("color", CB["gray"]) if iso in selected else CB["gray"]
                 for iso in year_df["iso_alpha"]
             ],
             text=[f"{value:.2f}" for value in year_df["fertility_rate"]],
             textposition="auto",
             hovertemplate="%{y}<br>%{x:.2f} children per woman<extra></extra>",
         )
-        fig.add_vline(x=2.1, line_width=2, line_dash="dash", line_color="#94a3b8")
+        fig.add_vline(x=2.1, line_width=2, line_dash="dash", line_color=CB["gray"])
         fig.add_annotation(
             x=2.1,
             y=0.98,
@@ -2066,7 +2099,7 @@ def server(input, output, session):
             orientation="h",
             name=f"{year_future} projected",
             marker_color=[
-                COUNTRY_META.get(iso, {}).get("color", "#ef4444") if iso in selected else "#ef4444"
+                COUNTRY_META.get(iso, {}).get("color", CB["blue"]) if iso in selected else CB["blue"]
                 for iso in top12["iso_alpha"]
             ],
             text=[f"{v:.2f}" for v in top12["fertility_rate"]],
@@ -2089,7 +2122,7 @@ def server(input, output, session):
             hovertemplate="%{y}<br>2023: %{x:.2f}<extra></extra>",
         )
 
-        fig.add_vline(x=2.1, line_width=2, line_dash="dash", line_color="#94a3b8")
+        fig.add_vline(x=2.1, line_width=2, line_dash="dash", line_color=CB["gray"])
         fig.add_annotation(
             x=2.1, y=0.98, yref="paper",
             text="Replacement 2.1",

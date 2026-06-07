@@ -838,23 +838,23 @@ button.collapse-toggle svg {
 }
 
 .corridor-origin {
-    color: #ef4444;
-    background: #ef4444;
+    color: #D55E00;
+    background: #D55E00;
 }
 
 .corridor-host {
-    color: #22d3ee;
-    background: #22d3ee;
+    color: #0072B2;
+    background: #0072B2;
 }
 
 .fertility-low {
-    color: #ef4444;
-    background: #ef4444;
+    color: #0072B2;
+    background: #0072B2;
 }
 
 .fertility-replacement {
-    color: #94a3b8;
-    background: #94a3b8;
+    color: #94A3B8;
+    background: #94A3B8;
 }
 
 [data-theme="light"] .fertility-replacement {
@@ -863,8 +863,8 @@ button.collapse-toggle svg {
 }
 
 .fertility-high {
-    color: #22c55e;
-    background: #22c55e;
+    color: #E69F00;
+    background: #E69F00;
 }
 
 .story-dashboard-panel .deep-dive-panel {

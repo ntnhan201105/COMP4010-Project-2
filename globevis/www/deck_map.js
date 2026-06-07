@@ -412,8 +412,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         return 1;
                     },
                     getLineColor: f => {
-                        if (groupFocusOpen && f.properties.isOrigin) return [255, 180, 180, 255];
-                        if (groupFocusOpen && f.properties.isHost) return [180, 245, 255, 255];
+                        if (groupFocusOpen && f.properties.isOrigin) return [240, 228, 66, 255];
+                        if (groupFocusOpen && f.properties.isHost) return [255, 255, 255, 245];
                         if (groupFocusOpen && f.properties.isGroupMember) return [255, 255, 255, 245];
                         return [99, 102, 241, 55];
                     },
@@ -500,9 +500,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 f.properties.fillColor = shouldDim
                     ? [24, 30, 44, 82]
                     : groupFocusOpen && isOrigin
-                        ? [239, 68, 68, 255]
+                        ? [213, 94, 0, 255]
                         : groupFocusOpen && isHost
-                            ? [34, 211, 238, 255]
+                            ? [86, 180, 233, 255]
                             : [countryData.color_r, countryData.color_g, countryData.color_b, isGroupMember && groupFocusOpen ? 255 : 245];
                 f.properties.isGroupMember = isGroupMember;
                 f.properties.isOrigin = isOrigin;
@@ -530,8 +530,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return 1;
             },
             getLineColor: f => {
-                if (groupFocusOpen && f.properties.isOrigin) return [255, 180, 180, 255];
-                if (groupFocusOpen && f.properties.isHost) return [180, 245, 255, 255];
+                if (groupFocusOpen && f.properties.isOrigin) return [240, 228, 66, 255];
+                if (groupFocusOpen && f.properties.isHost) return [255, 255, 255, 245];
                 if (groupFocusOpen && f.properties.isGroupMember) return [255, 255, 255, 245];
                 return [99, 102, 241, 55];
             },
