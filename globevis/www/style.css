@@ -660,8 +660,8 @@ button.collapse-toggle svg {
     min-width: 0;
     height: 100%;
     padding: 1.25rem;
-    transition: flex-basis 0.65s cubic-bezier(0.22, 1, 0.36, 1),
-        flex-grow 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: flex-basis 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+        flex-grow 0.38s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .story-stage.is-focused .story-globe-pane {
@@ -681,10 +681,12 @@ button.collapse-toggle svg {
     transform: translateX(34px);
     opacity: 0;
     pointer-events: none;
-    transition: flex-basis 0.65s cubic-bezier(0.22, 1, 0.36, 1),
-        width 0.65s cubic-bezier(0.22, 1, 0.36, 1),
-        transform 0.65s cubic-bezier(0.22, 1, 0.36, 1),
-        opacity 0.35s ease;
+    contain: layout paint;
+    will-change: flex-basis, transform, opacity;
+    transition: flex-basis 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+        width 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.22s ease;
 }
 
 .story-dashboard-panel.is-open,

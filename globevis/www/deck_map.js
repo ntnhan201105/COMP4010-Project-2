@@ -146,21 +146,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // -----------------------------------------------------------------------
 
     let plotResizeTimer = null;
+    let resizeQueued = false;
     const resizeStoryPlots = () => {
-        if (window.Plotly) {
+        resizeQueued = false;
+        const panel = document.querySelector('.story-dashboard-panel');
+        if (window.Plotly && panel && panel.classList.contains('is-open')) {
             document
                 .querySelectorAll('.story-dashboard-panel .js-plotly-plot')
                 .forEach(plot => window.Plotly.Plots.resize(plot));
         }
-        window.dispatchEvent(new Event('resize'));
         if (deckgl) deckgl.redraw(true);
     };
 
     const scheduleStoryPlotResize = () => {
         clearTimeout(plotResizeTimer);
-        requestAnimationFrame(resizeStoryPlots);
-        [120, 360, 720].forEach(delay => setTimeout(resizeStoryPlots, delay));
-        plotResizeTimer = setTimeout(resizeStoryPlots, 960);
+        if (!resizeQueued) {
+            resizeQueued = true;
+            requestAnimationFrame(resizeStoryPlots);
+        }
+        plotResizeTimer = setTimeout(resizeStoryPlots, 360);
     };
 
     const installDashboardResizeObservers = () => {
@@ -173,16 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.ResizeObserver) {
             const observer = new ResizeObserver(scheduleStoryPlotResize);
             targets.forEach(target => observer.observe(target));
-        }
-
-        const panel = document.querySelector('.story-dashboard-panel');
-        if (panel && window.MutationObserver) {
-            new MutationObserver(scheduleStoryPlotResize).observe(panel, {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                attributeFilter: ['class', 'style'],
-            });
         }
     };
 

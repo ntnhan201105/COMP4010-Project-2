@@ -26,9 +26,9 @@ except ImportError:  # pragma: no cover - deployment fallback
 
 
 # --- Story Configuration ---
-REFUGEE_ORIGINS = ["SYR", "UKR"]
-REFUGEE_HOSTS = ["TUR", "LBN", "JOR", "DEU", "POL"]
-REFUGEE_ISOS = REFUGEE_ORIGINS + REFUGEE_HOSTS
+REFUGEE_ORIGINS = ["SYR", "VEN"]
+REFUGEE_HOSTS = ["TUR", "LBN", "JOR", "COL", "PER"]
+REFUGEE_ISOS = ["SYR", "TUR", "LBN", "JOR", "VEN", "COL", "PER"]
 MIGRATION_OUTFLOW = REFUGEE_ORIGINS
 MIGRATION_INFLOW = REFUGEE_HOSTS
 
@@ -54,12 +54,12 @@ SOCIOECONOMIC_METRICS = {
 
 COUNTRY_META = {
     "SYR": {"name": "Syria", "color": "#ef4444", "role": "Conflict origin"},
-    "UKR": {"name": "Ukraine", "color": "#f97316", "role": "Conflict origin"},
+    "VEN": {"name": "Venezuela", "color": "#f97316", "role": "Conflict origin"},
     "TUR": {"name": "Turkey", "color": "#22d3ee", "role": "Regional host"},
     "LBN": {"name": "Lebanon", "color": "#67e8f9", "role": "Regional host"},
     "JOR": {"name": "Jordan", "color": "#38bdf8", "role": "Regional host"},
-    "DEU": {"name": "Germany", "color": "#0ea5e9", "role": "Long-distance host"},
-    "POL": {"name": "Poland", "color": "#06b6d4", "role": "Historical host"},
+    "COL": {"name": "Colombia", "color": "#0ea5e9", "role": "Regional host"},
+    "PER": {"name": "Peru", "color": "#06b6d4", "role": "Regional host"},
     "KOR": {"name": "South Korea", "color": "#ef4444", "role": "Ultra-low fertility"},
     "TWN": {"name": "Taiwan", "color": "#fb7185", "role": "Ultra-low fertility"},
     "JPN": {"name": "Japan", "color": "#f97316", "role": "Ultra-low fertility"},
@@ -79,13 +79,13 @@ STORY_CONFIGS = {
         "eyebrow": "Refugee crisis",
         "title": "Refugee Shockwaves",
         "copy": (
-            "Conflict pushes people out of Syria and Ukraine, while nearby and long-distance "
+            "Conflict and collapse push people out of Syria and Venezuela, while nearby "
             "host countries absorb the demographic pressure."
         ),
         "isos": REFUGEE_ISOS,
         "origins": MIGRATION_OUTFLOW,
         "hosts": MIGRATION_INFLOW,
-        "target": {"longitude": 33, "latitude": 44, "zoom": 1.0},
+        "target": {"longitude": -35, "latitude": 20, "zoom": 0.42},
     },
     "fertility": {
         "label": "Ultra-low fertility cliff",
@@ -136,7 +136,7 @@ INDICATOR_CONFIG = {
 df_full = pd.read_parquet("./data/demographics.parquet")
 df_full["year"] = df_full["year"].astype(int)
 ACTUAL_MAX_YEAR = int(df_full["year"].max())
-PROJECTION_END_YEAR = 2040
+PROJECTION_END_YEAR = 2030
 PROJECTION_WINDOW = 20
 
 PROJECTED_COLUMNS = [
@@ -466,7 +466,7 @@ app_ui = ui.page_sidebar(
         ),
         ui.input_checkbox(
             "show_projections",
-            "Show ML projections to 2040",
+            "Show ML projections to 2030",
             value=False,
         ),
         ui.input_slider(
@@ -551,7 +551,7 @@ app_ui = ui.page_sidebar(
                 ui.div(
                     story_intro(
                         "People Flee, Host States Absorb",
-                        "Syria and Ukraine mark the origin shocks. Turkey, Lebanon, Jordan, Germany, and Poland show how displacement pressure lands unevenly across nearby and long-distance hosts.",
+                        "Syria and Venezuela mark the origin shocks. Turkey, Lebanon, Jordan, Colombia, and Peru show how displacement pressure lands unevenly across nearby hosts.",
                         "The host-pressure chart uses OWID net migration rate as a per-capita inflow proxy, not bilateral refugee registry counts.",
                     ),
                     ui.div(
@@ -583,7 +583,7 @@ app_ui = ui.page_sidebar(
                         ui.div(output_widget("migration_rate_lines"), class_="story-plot-slot"),
                     ),
                     ui.card(
-                        ui.card_header("2. Linked Host Pressure"),
+                        ui.card_header("2. Peak Historical Immigration Pressure (Per 1,000 Inhabitants)"),
                         ui.div(output_widget("migration_burden_bars"), class_="story-plot-slot"),
                     ),
                     ui.card(
@@ -600,7 +600,7 @@ app_ui = ui.page_sidebar(
                         ui.div(output_widget("migration_population_structure"), class_="story-plot-slot"),
                     ),
                     ui.card(
-                        ui.card_header("4. ML Forecast With Confidence Ribbon"),
+                        ui.card_header("4. ML Forecast to 2030 With Confidence Ribbon"),
                         ui.div(
                             ui.input_select(
                                 "migration_forecast_country",
@@ -753,6 +753,11 @@ def server(input, output, session):
             value = default
         return value if value in allowed else default
 
+    def selected_story_country(input_id: str, fallback: str) -> str:
+        allowed = selected_story_isos()
+        default = fallback if fallback in allowed else (allowed[0] if allowed else fallback)
+        return selected_from_input(input_id, default, allowed or [fallback])
+
     def selected_metric() -> str:
         try:
             metric = input.scatter_x_metric()
@@ -774,7 +779,11 @@ def server(input, output, session):
         if exact.empty:
             exact = frame.loc[[(frame["year"] - target_year).abs().idxmin()]]
         row = exact.iloc[0]
-        counts = np.array([float(row.get(column, 0) or 0) for column, _ in AGE_GROUPS])
+        counts = []
+        for column, _ in AGE_GROUPS:
+            value = pd.to_numeric(row.get(column, np.nan), errors="coerce")
+            counts.append(float(value) if np.isfinite(value) else 0.0)
+        counts = np.array(counts)
         total = counts.sum()
         shares = counts / total * 100 if total > 0 else np.zeros(len(counts))
         return pd.DataFrame(
@@ -797,7 +806,7 @@ def server(input, output, session):
         if len(train) < 5:
             return train, pd.DataFrame(columns=["year", "mean", "lower", "upper"])
 
-        years = list(range(2023, 2041))
+        years = list(range(2023, 2031))
         values = train[col].to_numpy(dtype=float)
         mean = None
         sigma = float(np.nanstd(values)) * 0.25
@@ -866,8 +875,9 @@ def server(input, output, session):
 
     @reactive.Calc
     def migration_story_frame() -> pd.DataFrame:
+        isos = selected_story_isos()
         return df_countries[
-            df_countries["iso_alpha"].isin(REFUGEE_ISOS)
+            df_countries["iso_alpha"].isin(isos)
             & df_countries["year"].between(1990, 2022)
             & (df_countries["is_predicted"] == False)
         ].copy()
@@ -880,7 +890,7 @@ def server(input, output, session):
 
     @reactive.Calc
     def migration_forecast_data() -> tuple[pd.DataFrame, pd.DataFrame, str]:
-        iso = selected_from_input("migration_forecast_country", "SYR", REFUGEE_ISOS)
+        iso = selected_story_country("migration_forecast_country", "SYR")
         try:
             damped = bool(input.forecast_damped())
         except Exception:
@@ -890,8 +900,9 @@ def server(input, output, session):
 
     @reactive.Calc
     def fertility_story_frame() -> pd.DataFrame:
+        isos = selected_story_isos()
         frame = visible_time_series(df_countries)
-        return frame[frame["iso_alpha"].isin(FERTILITY_ISOS) & frame["year"].ge(1990)].copy()
+        return frame[frame["iso_alpha"].isin(isos)].copy()
 
     @reactive.Calc
     def global_year_frame() -> pd.DataFrame:
@@ -1002,6 +1013,42 @@ def server(input, output, session):
             selected = [selected]
         selected = [iso for iso in selected if iso in VALID_ISOS]
         return selected or defaults
+
+    @reactive.Effect
+    def sync_story_country_dropdowns():
+        story_id = open_story_id()
+        if story_id not in STORY_CONFIGS:
+            return
+
+        isos = selected_story_isos()
+        if not isos:
+            return
+        choices = {iso: country_name(iso) for iso in isos}
+
+        def current_or_first(input_id: str) -> str:
+            try:
+                current = getattr(input, input_id)()
+            except Exception:
+                current = None
+            return current if current in choices else isos[0]
+
+        if story_id == "migration":
+            ui.update_select(
+                "migration_structure_country",
+                choices=choices,
+                selected=current_or_first("migration_structure_country"),
+            )
+            ui.update_select(
+                "migration_forecast_country",
+                choices=choices,
+                selected=current_or_first("migration_forecast_country"),
+            )
+        elif story_id == "fertility":
+            ui.update_select(
+                "fertility_structure_country",
+                choices=choices,
+                selected=current_or_first("fertility_structure_country"),
+            )
 
     @render.ui
     def open_story_control():
@@ -1428,7 +1475,7 @@ def server(input, output, session):
         )
         fig.update_traces(hoverlabel=dict(bgcolor=ct["hover_bg"], font=dict(color=ct["hover_font"])))
         fig.update_xaxes(title_text="Year", title_standoff=12, gridcolor=ct["gridcolor"])
-        fig.update_yaxes(title_text=y_title, gridcolor=ct["gridcolor"])
+        fig.update_yaxes(title_text=y_title if y_title else None, gridcolor=ct["gridcolor"])
         return fig
 
     @render_widget
@@ -1471,6 +1518,40 @@ def server(input, output, session):
         year_marker = int(np.clip(chart_year(), 1990, 2022))
         fig.add_vline(x=year_marker, line_width=1.5, line_dash="dash", line_color="#e2e8f0")
         fig = apply_story_layout(fig, "Migrants per 1,000 people", 420)
+        ct = _chart_theme()
+        if "SYR" in selected_isos:
+            fig.add_vline(x=2013, line_width=1.5, line_dash="dash", line_color="#ef4444")
+            fig.add_annotation(
+                x=2013,
+                y=1.03,
+                yref="paper",
+                text="2013: Syria war displacement",
+                showarrow=False,
+                font=dict(color=ct["text_primary"], size=11),
+                bgcolor=ct["hover_bg"],
+                bordercolor=ct["gridcolor"],
+                borderwidth=1,
+            )
+        if "VEN" in selected_isos:
+            fig.add_vrect(
+                x0=2018,
+                x1=2019,
+                fillcolor="#f97316",
+                opacity=0.12,
+                line_width=0,
+                layer="below",
+            )
+            fig.add_annotation(
+                x=2018.5,
+                y=0.9,
+                yref="paper",
+                text="2018-19: Venezuela exodus",
+                showarrow=False,
+                font=dict(color=ct["text_primary"], size=11),
+                bgcolor=ct["hover_bg"],
+                bordercolor=ct["gridcolor"],
+                borderwidth=1,
+            )
         fig.update_layout(dragmode="select")
         fig.update_xaxes(range=[1990, 2022])
         return fig
@@ -1480,8 +1561,12 @@ def server(input, output, session):
         if open_story_id() != "migration":
             return go.Figure()
         frame = migration_window_frame()
+        selected_isos = selected_story_isos()
+        host_like_isos = [iso for iso in selected_isos if iso not in MIGRATION_OUTFLOW]
+        if not host_like_isos:
+            host_like_isos = selected_isos
         rows = []
-        for iso in REFUGEE_HOSTS:
+        for iso in host_like_isos:
             country_df = frame[frame["iso_alpha"].eq(iso)]
             if country_df.empty:
                 continue
@@ -1508,8 +1593,9 @@ def server(input, output, session):
             textposition="auto",
             hovertemplate="%{y}<br>Peak host-pressure proxy: %{x:.2f} per 1,000<extra></extra>",
         )
-        fig = apply_story_layout(fig, "Positive net migration per 1,000", 360)
+        fig = apply_story_layout(fig, "", 360)
         fig.update_layout(showlegend=False, margin=dict(l=32, r=24, t=24, b=54))
+        fig.update_xaxes(title_text="Net Migrants per 1,000 Inhabitants")
         fig.update_yaxes(automargin=True)
         return fig
 
@@ -1517,7 +1603,7 @@ def server(input, output, session):
     def migration_population_structure():
         if open_story_id() != "migration":
             return go.Figure()
-        iso = selected_from_input("migration_structure_country", "SYR", REFUGEE_ISOS)
+        iso = selected_story_country("migration_structure_country", "SYR")
         compare_year = int(np.clip(chart_year(), 1990, 2022))
         baseline = age_structure(iso, 1990, include_projected=False)
         current = age_structure(iso, compare_year, include_projected=False)
@@ -1580,7 +1666,7 @@ def server(input, output, session):
         fig.add_vline(x=2022, line_width=1.5, line_dash="dot", line_color="#e2e8f0")
         fig.add_hline(y=0, line_width=1, line_dash="dot", line_color="#94a3b8")
         fig = apply_story_layout(fig, f"{country_name(iso)} migrants per 1,000", 400)
-        fig.update_xaxes(range=[1990, 2040])
+        fig.update_xaxes(range=[1990, 2030])
         return fig
 
     @render_widget
@@ -1645,7 +1731,7 @@ def server(input, output, session):
         if open_story_id() != "fertility":
             return go.Figure()
         selected_isos = selected_story_isos()
-        focus_iso = selected_from_input("fertility_structure_country", "KOR", FERTILITY_ISOS)
+        focus_iso = selected_story_country("fertility_structure_country", "KOR")
         fig = make_subplots(specs=[[{"secondary_y": True}]])
         frame = fertility_story_frame()
 
@@ -1765,18 +1851,18 @@ def server(input, output, session):
     def fertility_population_structure():
         if open_story_id() != "fertility":
             return go.Figure()
-        iso = selected_from_input("fertility_structure_country", "KOR", FERTILITY_ISOS)
+        iso = selected_story_country("fertility_structure_country", "KOR")
         compare_year = chart_year()
-        baseline = age_structure(iso, 1990)
+        baseline = age_structure(iso, 1950)
         current = age_structure(iso, compare_year)
         fig = go.Figure()
         fig.add_bar(
             y=baseline["age_group"],
             x=baseline["share"],
             orientation="h",
-            name="1990",
+            name="1950",
             marker_color="rgba(148, 163, 184, 0.58)",
-            hovertemplate="1990<br>%{y}: %{x:.1f}%<extra></extra>",
+            hovertemplate="1950<br>%{y}: %{x:.1f}%<extra></extra>",
         )
         fig.add_bar(
             y=current["age_group"],
@@ -1799,8 +1885,10 @@ def server(input, output, session):
         metric = selected_metric()
         frame = fertility_scatter_frame()
         fig = go.Figure()
-        non_story = frame[~frame["iso_alpha"].isin(FERTILITY_ISOS)]
-        story = frame[frame["iso_alpha"].isin(FERTILITY_ISOS)]
+        selected_isos = selected_story_isos()
+        selected_set = set(selected_isos)
+        non_story = frame[~frame["iso_alpha"].isin(selected_set)]
+        story = frame[frame["iso_alpha"].isin(selected_set)]
 
         fig.add_scatter(
             x=non_story[metric],
@@ -1816,7 +1904,7 @@ def server(input, output, session):
             hovertemplate="%{text}<br>%{x:.2f}<br>%{y:.2f} children per woman<extra></extra>",
         )
 
-        for idx, iso in enumerate(FERTILITY_ISOS):
+        for idx, iso in enumerate(selected_isos):
             country_df = story[story["iso_alpha"].eq(iso)]
             if country_df.empty:
                 continue
@@ -1857,6 +1945,31 @@ def server(input, output, session):
                 hoverinfo="skip",
             )
 
+        ct = _chart_theme()
+        low_group = story[story["iso_alpha"].isin(FERTILITY_COLLAPSE + FERTILITY_SCALE_SHIFT)]
+        high_group = story[story["iso_alpha"].isin(FERTILITY_HIGH_GROWTH)]
+
+        def add_cluster_note(group_df: pd.DataFrame, text: str, ax: int, ay: int) -> None:
+            group_df = group_df[[metric, "fertility_rate"]].dropna()
+            if group_df.empty:
+                return
+            fig.add_annotation(
+                x=float(group_df[metric].median()),
+                y=float(group_df["fertility_rate"].median()),
+                text=text,
+                showarrow=True,
+                arrowhead=2,
+                ax=ax,
+                ay=ay,
+                bgcolor=ct["hover_bg"],
+                bordercolor=ct["gridcolor"],
+                borderwidth=1,
+                font=dict(color=ct["text_primary"], size=11),
+            )
+
+        add_cluster_note(low_group, "urban aging<br>low fertility", -42, -38)
+        add_cluster_note(high_group, "youthful<br>high fertility", 42, 34)
+
         fig = apply_story_layout(fig, "Fertility rate", 430)
         fig.update_layout(hovermode="closest")
         fig.update_xaxes(title_text=SOCIOECONOMIC_METRICS[metric])
@@ -1873,6 +1986,7 @@ def server(input, output, session):
         if frame.empty:
             return fig
 
+        selected_set = set(selected_story_isos())
         cluster_palette = ["#818cf8", "#22d3ee", "#ef4444", "#22c55e", "#f59e0b", "#e879f9", "#14b8a6", "#94a3b8"]
         for idx, cluster in enumerate(sorted(frame["cluster"].unique())):
             cluster_df = frame[frame["cluster"].eq(cluster)]
@@ -1883,9 +1997,9 @@ def server(input, output, session):
                 name=f"Cluster {cluster}",
                 marker=dict(
                     color=cluster_palette[idx % len(cluster_palette)],
-                    size=np.where(cluster_df["iso_alpha"].isin(FERTILITY_ISOS), 14, 7),
-                    opacity=np.where(cluster_df["iso_alpha"].isin(FERTILITY_ISOS), 0.95, 0.55),
-                    line=dict(color="#f8fafc", width=np.where(cluster_df["iso_alpha"].isin(FERTILITY_ISOS), 1.4, 0)),
+                    size=np.where(cluster_df["iso_alpha"].isin(selected_set), 14, 7),
+                    opacity=np.where(cluster_df["iso_alpha"].isin(selected_set), 0.95, 0.55),
+                    line=dict(color="#f8fafc", width=np.where(cluster_df["iso_alpha"].isin(selected_set), 1.4, 0)),
                 ),
                 text=cluster_df["country"],
                 customdata=cluster_df[["fertility_rate", "elder_share", "population_growth_rate"]],
@@ -1896,7 +2010,7 @@ def server(input, output, session):
                 ),
             )
 
-        label_df = frame[frame["iso_alpha"].isin(FERTILITY_ISOS)]
+        label_df = frame[frame["iso_alpha"].isin(selected_set)]
         fig.add_scatter(
             x=label_df["pca_x"],
             y=label_df["pca_y"],
@@ -1955,49 +2069,49 @@ def server(input, output, session):
 
     @render_widget
     def extinction_watch():
-        """Show countries projected to have critically low fertility by 2040."""
+        """Show countries projected to have critically low fertility by 2030."""
         if open_story_id() != "fertility":
             return go.Figure()
         if not has_predictions() or not input.show_projections():
             return go.Figure()
 
         year_now = 2023
-        year_future = 2040
+        year_future = PROJECTION_END_YEAR
 
-        # Get 2023 and 2040 data
+        # Get 2023 and projected data
         df_2023 = df_countries[
             df_countries["year"].eq(year_now)
             & df_countries["fertility_rate"].notna()
             & df_countries["pop"].fillna(0).gt(500_000)
         ].copy()
-        df_2040 = df_countries[
+        df_future = df_countries[
             df_countries["year"].eq(year_future)
             & df_countries["fertility_rate"].notna()
             & df_countries["pop"].fillna(0).gt(500_000)
         ].copy()
 
-        if df_2040.empty:
+        if df_future.empty:
             return go.Figure()
 
-        # Top 12 lowest predicted fertility in 2040
-        top12 = df_2040.nsmallest(12, "fertility_rate").sort_values("fertility_rate", ascending=True)
+        # Top 12 lowest predicted fertility at the projection horizon
+        top12 = df_future.nsmallest(12, "fertility_rate").sort_values("fertility_rate", ascending=True)
         selected = set(selected_story_isos())
 
         fig = go.Figure()
 
-        # 2040 predicted bar
+        # Projected bar
         fig.add_bar(
             y=top12["country"],
             x=top12["fertility_rate"],
             orientation="h",
-            name="2040 projected",
+            name=f"{year_future} projected",
             marker_color=[
                 COUNTRY_META.get(iso, {}).get("color", "#ef4444") if iso in selected else "#ef4444"
                 for iso in top12["iso_alpha"]
             ],
             text=[f"{v:.2f}" for v in top12["fertility_rate"]],
             textposition="auto",
-            hovertemplate="%{y}<br>2040: %{x:.2f}<extra></extra>",
+            hovertemplate=f"%{{y}}<br>{year_future}: %{{x:.2f}}<extra></extra>",
         )
 
         # 2023 marker overlay
