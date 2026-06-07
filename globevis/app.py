@@ -28,6 +28,12 @@ except ImportError:  # pragma: no cover - deployment fallback
 REFUGEE_ORIGINS = ["SYR", "VEN"]
 REFUGEE_HOSTS = ["TUR", "LBN", "JOR", "COL", "PER"]
 REFUGEE_ISOS = ["SYR", "TUR", "LBN", "JOR", "VEN", "COL", "PER"]
+SYRIAN_CORRIDOR_ISOS = ["SYR", "TUR", "LBN", "JOR"]
+VENEZUELAN_CORRIDOR_ISOS = ["VEN", "COL", "PER"]
+MIGRATION_STRUCTURE_WINDOWS = {
+    **{iso: (2010, 2015) for iso in SYRIAN_CORRIDOR_ISOS},
+    **{iso: (2015, 2020) for iso in VENEZUELAN_CORRIDOR_ISOS},
+}
 MIGRATION_OUTFLOW = REFUGEE_ORIGINS
 MIGRATION_INFLOW = REFUGEE_HOSTS
 
@@ -1598,25 +1604,25 @@ def server(input, output, session):
         if open_story_id() != "migration":
             return go.Figure()
         iso = selected_story_country("migration_structure_country", "SYR")
-        compare_year = int(np.clip(chart_year(), 1990, 2022))
-        baseline = age_structure(iso, 1990, include_projected=False)
-        current = age_structure(iso, compare_year, include_projected=False)
+        baseline_year, peak_year = MIGRATION_STRUCTURE_WINDOWS.get(iso, (2010, 2015))
+        baseline = age_structure(iso, baseline_year, include_projected=False)
+        current = age_structure(iso, peak_year, include_projected=False)
         fig = go.Figure()
         fig.add_bar(
             y=baseline["age_group"],
             x=baseline["share"],
             orientation="h",
-            name="1990",
+            name=str(baseline_year),
             marker_color="rgba(148, 163, 184, 0.58)",
-            hovertemplate="1990<br>%{y}: %{x:.1f}%<extra></extra>",
+            hovertemplate=f"{baseline_year}<br>%{{y}}: %{{x:.1f}}%<extra></extra>",
         )
         fig.add_bar(
             y=current["age_group"],
             x=current["share"],
             orientation="h",
-            name=str(compare_year),
+            name=str(peak_year),
             marker_color=COUNTRY_META.get(iso, {}).get("color", "#818cf8"),
-            hovertemplate=f"{compare_year}<br>%{{y}}: %{{x:.1f}}%<extra></extra>",
+            hovertemplate=f"{peak_year}<br>%{{y}}: %{{x:.1f}}%<extra></extra>",
         )
         fig = apply_story_layout(fig, f"{country_name(iso)} population share", 360)
         fig.update_layout(barmode="group", margin=dict(l=34, r=24, t=76, b=58))
