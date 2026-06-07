@@ -1,9 +1,9 @@
 """
 predict_future.py — Simple linear regression per country × indicator
-to extend demographics.parquet from 2023 → 2040.
+to extend demographics.parquet from 2023 → 2030.
 
 Uses the last 15 years (2009–2023) to fit a trend line, then predicts
-2024–2040 with reasonable constraints to prevent absurd values.
+2024–2030 with reasonable constraints to prevent absurd values.
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ OUTPUT = DATA_DIR / "demographics.parquet"  # overwrite (adds is_predicted col)
 
 # ── config ──────────────────────────────────────────────────────────
 PREDICT_START = 2024
-PREDICT_END = 2040
+PREDICT_END = 2030
 FIT_WINDOW = 15  # years of recent history to fit
 
 # Indicators to predict: column → (floor, ceil)
@@ -117,13 +117,13 @@ def main():
     print(f"  Years: {int(df_out['year'].min())} – {int(df_out['year'].max())}")
 
     # ── Verify ───────────────────────────────────────────────────────
-    print("\n  KOR fertility (2020-2040):")
+    print(f"\n  KOR fertility (2020-{PREDICT_END}):")
     kor = df_out[(df_out["iso_alpha"] == "KOR") & (df_out["year"] >= 2020)].sort_values("year")
     for _, r in kor.iterrows():
         tag = " [PRED]" if r["is_predicted"] else ""
         print(f"    {int(r['year'])}: {r['fertility_rate']:.4f}{tag}")
 
-    print("\n  TWN fertility (2020-2040):")
+    print(f"\n  TWN fertility (2020-{PREDICT_END}):")
     twn = df_out[(df_out["iso_alpha"] == "TWN") & (df_out["year"] >= 2020)].sort_values("year")
     for _, r in twn.iterrows():
         tag = " [PRED]" if r["is_predicted"] else ""

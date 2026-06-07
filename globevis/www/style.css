@@ -143,6 +143,16 @@ html, body {
     letter-spacing: -0.3px;
 }
 
+.sidebar-caption {
+    margin: 0 0 1.35rem 0 !important;
+    padding-left: 0.85rem !important;
+    border-left: 3px solid var(--accent) !important;
+    color: var(--text-copy) !important;
+    font-size: 0.98rem !important;
+    line-height: 1.55 !important;
+    background: transparent !important;
+}
+
 .sidebar h4, .bslib-sidebar h4, h4 {
     font-weight: 600 !important;
     color: var(--text-heading) !important;
@@ -609,36 +619,6 @@ button.collapse-toggle svg {
     background: transparent !important;
 }
 
-.globe-story-callout {
-    position: absolute;
-    left: 22px;
-    bottom: 20px;
-    z-index: 900;
-    max-width: 430px;
-    padding: 1rem 1.1rem;
-    background: var(--bg-callout);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-left: 3px solid var(--accent);
-    color: var(--text-primary);
-}
-
-.globe-callout-title {
-    margin: 0 0 0.45rem 0 !important;
-    font-size: 1.3rem !important;
-    font-weight: 700 !important;
-    color: var(--text-heading) !important;
-    background: transparent !important;
-}
-
-.globe-callout-copy {
-    margin: 0 !important;
-    color: var(--text-secondary) !important;
-    font-size: 0.92rem !important;
-    line-height: 1.5 !important;
-    background: transparent !important;
-}
-
 /* ---------- Globe-first Story Stage ---------- */
 .bslib-sidebar-layout > .main {
     padding: 0 !important;
@@ -892,10 +872,6 @@ button.collapse-toggle svg {
     width: auto;
     margin: 0.75rem 0 1rem 0;
     animation: none;
-}
-
-.story-stage.is-focused .globe-story-callout {
-    max-width: 330px;
 }
 
 .story-stage.is-focused .view-toggle-btn {

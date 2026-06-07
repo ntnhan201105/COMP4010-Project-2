@@ -6,7 +6,6 @@ import os
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from shiny import App, reactive, render, ui
 from shinywidgets import output_widget, render_widget
 
@@ -447,7 +446,10 @@ def story_intro(title: str, *paragraphs: str):
 # --- Dashboard UI Definition ---
 app_ui = ui.page_sidebar(
     ui.sidebar(
-        ui.h2("Where People Move, Where Populations Fade", class_="mb-4"),
+        ui.p(
+            "Use the migration and fertility lenses to turn the globe into a story view.",
+            class_="sidebar-caption",
+        ),
         ui.tags.button(
             ui.HTML(
                 '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" '
@@ -506,14 +508,6 @@ app_ui = ui.page_sidebar(
     ui.div(
         ui.div(
             ui.div(id="deck-map-container", style="width: 100%; height: 100%;"),
-            ui.div(
-                ui.h3("Where People Move, Where Populations Fade", class_="globe-callout-title"),
-                ui.p(
-                    "Use the migration and fertility lenses to turn the globe into a story view.",
-                    class_="globe-callout-copy",
-                ),
-                class_="globe-story-callout",
-            ),
             ui.tags.button(
                 ui.HTML(
                     '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" '
@@ -1453,7 +1447,7 @@ def server(input, output, session):
             template=ct["template"],
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
-            margin=dict(l=30, r=24, t=24, b=94),
+            margin=dict(l=34, r=24, t=76, b=58),
             height=height,
             hovermode="x unified",
             hoverlabel=dict(
@@ -1463,8 +1457,8 @@ def server(input, output, session):
             ),
             legend=dict(
                 orientation="h",
-                yanchor="top",
-                y=-0.18,
+                yanchor="bottom",
+                y=1.02,
                 xanchor="left",
                 x=0,
                 bgcolor=ct["legend_bg"],
@@ -1625,7 +1619,7 @@ def server(input, output, session):
             hovertemplate=f"{compare_year}<br>%{{y}}: %{{x:.1f}}%<extra></extra>",
         )
         fig = apply_story_layout(fig, f"{country_name(iso)} population share", 360)
-        fig.update_layout(barmode="group", margin=dict(l=32, r=24, t=24, b=62))
+        fig.update_layout(barmode="group", margin=dict(l=34, r=24, t=76, b=58))
         fig.update_xaxes(title_text="Share of population (%)")
         fig.update_yaxes(autorange="reversed")
         return fig
@@ -1731,8 +1725,7 @@ def server(input, output, session):
         if open_story_id() != "fertility":
             return go.Figure()
         selected_isos = selected_story_isos()
-        focus_iso = selected_story_country("fertility_structure_country", "KOR")
-        fig = make_subplots(specs=[[{"secondary_y": True}]])
+        fig = go.Figure()
         frame = fertility_story_frame()
 
         if not df_world.empty:
@@ -1746,7 +1739,6 @@ def server(input, output, session):
                     line=dict(color="#e2e8f0", width=2.5, dash="dot"),
                     hovertemplate="%{x}<br>%{y:.2f} children per woman<extra></extra>",
                 ),
-                secondary_y=False,
             )
 
         for idx, iso in enumerate(selected_isos):
@@ -1764,7 +1756,6 @@ def server(input, output, session):
                     line=dict(color=line_color(iso, idx), width=2.7),
                     hovertemplate="%{x}<br>%{y:.2f} children per woman<extra></extra>",
                 ),
-                secondary_y=False,
             )
             if not pred.empty:
                 fig.add_trace(
@@ -1776,24 +1767,7 @@ def server(input, output, session):
                         line=dict(color=line_color(iso, idx), width=2, dash="dash"),
                         hovertemplate="%{x}<br>%{y:.2f} children per woman<extra></extra>",
                     ),
-                    secondary_y=False,
                 )
-
-        focus = frame[frame["iso_alpha"].eq(focus_iso)].sort_values("year").copy()
-        if not focus.empty:
-            age_total = focus[[column for column, _ in AGE_GROUPS]].sum(axis=1).replace(0, np.nan)
-            elder_share = focus["age_65_plus"] / age_total * 100
-            fig.add_trace(
-                go.Scatter(
-                    x=focus["year"],
-                    y=elder_share,
-                    mode="lines",
-                    name=f"{country_name(focus_iso)} 65+ share",
-                    line=dict(color="#a5b4fc", width=2.4, dash="dash"),
-                    hovertemplate="%{x}<br>%{y:.1f}% age 65+<extra></extra>",
-                ),
-                secondary_y=True,
-            )
 
         fig.add_hline(
             y=2.1,
@@ -1802,7 +1776,6 @@ def server(input, output, session):
             line_color="#94a3b8",
             annotation_text="Replacement 2.1",
             annotation_position="top left",
-            secondary_y=False,
         )
 
         if "KOR" in selected_isos:
@@ -1826,14 +1799,14 @@ def server(input, output, session):
             template=ct["template"],
             plot_bgcolor="rgba(0,0,0,0)",
             paper_bgcolor="rgba(0,0,0,0)",
-            margin=dict(l=30, r=42, t=24, b=94),
+            margin=dict(l=34, r=24, t=76, b=58),
             height=430,
             hovermode="x unified",
             hoverlabel=dict(bgcolor=ct["hover_bg"], bordercolor=ct["hover_border"], font=dict(color=ct["hover_font"], size=12)),
             legend=dict(
                 orientation="h",
-                yanchor="top",
-                y=-0.18,
+                yanchor="bottom",
+                y=1.02,
                 xanchor="left",
                 x=0,
                 bgcolor=ct["legend_bg"],
@@ -1843,8 +1816,7 @@ def server(input, output, session):
             ),
         )
         fig.update_xaxes(title_text="Year", title_standoff=12, gridcolor=ct["gridcolor"])
-        fig.update_yaxes(title_text="Children per woman", gridcolor=ct["gridcolor"], secondary_y=False)
-        fig.update_yaxes(title_text="65+ share (%)", gridcolor="rgba(0,0,0,0)", secondary_y=True)
+        fig.update_yaxes(title_text="Children per woman", gridcolor=ct["gridcolor"])
         return fig
 
     @render_widget
@@ -1873,7 +1845,7 @@ def server(input, output, session):
             hovertemplate="%{fullData.name}<br>%{y}: %{x:.1f}%<extra></extra>",
         )
         fig = apply_story_layout(fig, f"{country_name(iso)} population share", 360)
-        fig.update_layout(barmode="group", margin=dict(l=32, r=24, t=24, b=62))
+        fig.update_layout(barmode="group", margin=dict(l=34, r=24, t=76, b=58))
         fig.update_xaxes(title_text="Share of population (%)")
         fig.update_yaxes(autorange="reversed")
         return fig
@@ -1884,6 +1856,8 @@ def server(input, output, session):
             return go.Figure()
         metric = selected_metric()
         frame = fertility_scatter_frame()
+        if metric == "population_density":
+            frame = frame[frame[metric].gt(0) & frame[metric].le(50_000)].copy()
         fig = go.Figure()
         selected_isos = selected_story_isos()
         selected_set = set(selected_isos)
@@ -1945,36 +1919,16 @@ def server(input, output, session):
                 hoverinfo="skip",
             )
 
-        ct = _chart_theme()
-        low_group = story[story["iso_alpha"].isin(FERTILITY_COLLAPSE + FERTILITY_SCALE_SHIFT)]
-        high_group = story[story["iso_alpha"].isin(FERTILITY_HIGH_GROWTH)]
-
-        def add_cluster_note(group_df: pd.DataFrame, text: str, ax: int, ay: int) -> None:
-            group_df = group_df[[metric, "fertility_rate"]].dropna()
-            if group_df.empty:
-                return
-            fig.add_annotation(
-                x=float(group_df[metric].median()),
-                y=float(group_df["fertility_rate"].median()),
-                text=text,
-                showarrow=True,
-                arrowhead=2,
-                ax=ax,
-                ay=ay,
-                bgcolor=ct["hover_bg"],
-                bordercolor=ct["gridcolor"],
-                borderwidth=1,
-                font=dict(color=ct["text_primary"], size=11),
-            )
-
-        add_cluster_note(low_group, "urban aging<br>low fertility", -42, -38)
-        add_cluster_note(high_group, "youthful<br>high fertility", 42, 34)
-
         fig = apply_story_layout(fig, "Fertility rate", 430)
         fig.update_layout(hovermode="closest")
         fig.update_xaxes(title_text=SOCIOECONOMIC_METRICS[metric])
         if metric == "population_density":
-            fig.update_xaxes(type="log")
+            fig.update_xaxes(
+                type="log",
+                range=[0, np.log10(50_000)],
+                tickvals=[1, 10, 100, 1_000, 10_000],
+                ticktext=["1", "10", "100", "1k", "10k"],
+            )
         return fig
 
     @render_widget
@@ -2138,10 +2092,7 @@ def server(input, output, session):
         )
 
         fig = apply_story_layout(fig, "Children per woman", 430)
-        fig.update_layout(showlegend=True, margin=dict(l=30, r=24, t=24, b=54),
-                          legend=dict(orientation="h", yanchor="top", y=-0.18, xanchor="left", x=0,
-                                      bgcolor="rgba(15, 23, 42, 0.78)", bordercolor="rgba(255,255,255,0.10)",
-                                      borderwidth=1, font=dict(color="#f8fafc", size=12)))
+        fig.update_layout(showlegend=True, margin=dict(l=34, r=24, t=76, b=58))
         fig.update_yaxes(automargin=True)
         return fig
 
