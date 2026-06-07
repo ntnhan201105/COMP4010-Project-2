@@ -145,16 +145,56 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     // -----------------------------------------------------------------------
 
+    let plotResizeTimer = null;
+    const resizeStoryPlots = () => {
+        if (window.Plotly) {
+            document
+                .querySelectorAll('.story-dashboard-panel .js-plotly-plot')
+                .forEach(plot => window.Plotly.Plots.resize(plot));
+        }
+        window.dispatchEvent(new Event('resize'));
+        if (deckgl) deckgl.redraw(true);
+    };
+
+    const scheduleStoryPlotResize = () => {
+        clearTimeout(plotResizeTimer);
+        requestAnimationFrame(resizeStoryPlots);
+        [120, 360, 720].forEach(delay => setTimeout(resizeStoryPlots, delay));
+        plotResizeTimer = setTimeout(resizeStoryPlots, 960);
+    };
+
+    const installDashboardResizeObservers = () => {
+        const targets = [
+            document.getElementById('story-stage'),
+            document.querySelector('.story-dashboard-panel'),
+            document.querySelector('.bslib-sidebar-layout > .main'),
+        ].filter(Boolean);
+
+        if (window.ResizeObserver) {
+            const observer = new ResizeObserver(scheduleStoryPlotResize);
+            targets.forEach(target => observer.observe(target));
+        }
+
+        const panel = document.querySelector('.story-dashboard-panel');
+        if (panel && window.MutationObserver) {
+            new MutationObserver(scheduleStoryPlotResize).observe(panel, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['class', 'style'],
+            });
+        }
+    };
+
     const syncStageLayout = () => {
         const stage = document.getElementById('story-stage');
         const panel = document.querySelector('.story-dashboard-panel');
         if (stage) stage.classList.toggle('is-focused', groupFocusOpen);
         if (panel) panel.classList.toggle('is-open', groupFocusOpen);
-        setTimeout(() => {
-            window.dispatchEvent(new Event('resize'));
-            if (deckgl) deckgl.redraw(true);
-        }, 420);
+        scheduleStoryPlotResize();
     };
+
+    setTimeout(installDashboardResizeObservers, 0);
 
     const activeGroupData = () => currentYearData.filter(d =>
         d.iso_alpha && activeGroupIsos.has(d.iso_alpha.toLowerCase())

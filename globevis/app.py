@@ -492,61 +492,6 @@ app_ui = ui.page_sidebar(
             selected="net_migration_rate",
         ),
         ui.output_ui("open_story_control"),
-        ui.output_ui("story_country_filter"),
-        ui.panel_conditional(
-            "input.indicator == 'net_migration_rate'",
-            ui.div(
-                ui.input_slider(
-                    "migration_year_window",
-                    "Migration brush window",
-                    min=1990,
-                    max=2022,
-                    value=(2011, 2022),
-                    step=1,
-                    sep="",
-                ),
-                ui.input_select(
-                    "migration_structure_country",
-                    "Population structure country",
-                    choices=REFUGEE_COUNTRY_CHOICES,
-                    selected="SYR",
-                ),
-                ui.input_select(
-                    "migration_forecast_country",
-                    "Forecast country",
-                    choices=REFUGEE_COUNTRY_CHOICES,
-                    selected="SYR",
-                ),
-                ui.input_checkbox("forecast_damped", "Damped forecast trend", value=True),
-                class_="story-sidebar-block story-controls",
-            ),
-        ),
-        ui.panel_conditional(
-            "input.indicator == 'fertility_rate'",
-            ui.div(
-                ui.input_select(
-                    "fertility_structure_country",
-                    "Population structure country",
-                    choices=FERTILITY_COUNTRY_CHOICES,
-                    selected="KOR",
-                ),
-                ui.input_select(
-                    "scatter_x_metric",
-                    "Scatter x-axis metric",
-                    choices=SOCIOECONOMIC_METRICS,
-                    selected="population_density",
-                ),
-                ui.input_slider(
-                    "cluster_count",
-                    "K-Means clusters",
-                    min=2,
-                    max=8,
-                    value=4,
-                    step=1,
-                ),
-                class_="story-sidebar-block story-controls",
-            ),
-        ),
         ui.hr(),
         ui.output_ui("indicator_exposition"),
         width=400,
@@ -616,19 +561,57 @@ app_ui = ui.page_sidebar(
                     ),
                     ui.card(
                         ui.card_header("1. Net Migration Shockwaves"),
-                        output_widget("migration_rate_lines"),
+                        ui.div(
+                            ui.input_selectize(
+                                "migration_story_countries",
+                                "Countries in this storyline",
+                                choices=story_choices("migration"),
+                                selected=STORY_CONFIGS["migration"]["isos"],
+                                multiple=True,
+                            ),
+                            ui.input_slider(
+                                "migration_year_window",
+                                "Migration brush window",
+                                min=1990,
+                                max=2022,
+                                value=(2011, 2022),
+                                step=1,
+                                sep="",
+                            ),
+                            class_="figure-controls figure-controls-two",
+                        ),
+                        ui.div(output_widget("migration_rate_lines"), class_="story-plot-slot"),
                     ),
                     ui.card(
                         ui.card_header("2. Linked Host Pressure"),
-                        output_widget("migration_burden_bars"),
+                        ui.div(output_widget("migration_burden_bars"), class_="story-plot-slot"),
                     ),
                     ui.card(
                         ui.card_header("3. Age Structure Shift"),
-                        output_widget("migration_population_structure"),
+                        ui.div(
+                            ui.input_select(
+                                "migration_structure_country",
+                                "Population structure country",
+                                choices=REFUGEE_COUNTRY_CHOICES,
+                                selected="SYR",
+                            ),
+                            class_="figure-controls",
+                        ),
+                        ui.div(output_widget("migration_population_structure"), class_="story-plot-slot"),
                     ),
                     ui.card(
                         ui.card_header("4. ML Forecast With Confidence Ribbon"),
-                        output_widget("migration_forecast_chart"),
+                        ui.div(
+                            ui.input_select(
+                                "migration_forecast_country",
+                                "Forecast country",
+                                choices=REFUGEE_COUNTRY_CHOICES,
+                                selected="SYR",
+                            ),
+                            ui.input_checkbox("forecast_damped", "Damped forecast trend", value=True),
+                            class_="figure-controls figure-controls-two",
+                        ),
+                        ui.div(output_widget("migration_forecast_chart"), class_="story-plot-slot"),
                     ),
                     class_="story-dashboard-body",
                 ),
@@ -649,19 +632,58 @@ app_ui = ui.page_sidebar(
                     ),
                     ui.card(
                         ui.card_header("1. Fertility vs Replacement and Aging"),
-                        output_widget("fertility_replacement_lines"),
+                        ui.div(
+                            ui.input_selectize(
+                                "fertility_story_countries",
+                                "Countries in this storyline",
+                                choices=story_choices("fertility"),
+                                selected=STORY_CONFIGS["fertility"]["isos"],
+                                multiple=True,
+                            ),
+                            class_="figure-controls",
+                        ),
+                        ui.div(output_widget("fertility_replacement_lines"), class_="story-plot-slot"),
                     ),
                     ui.card(
                         ui.card_header("2. Age Structure Shift"),
-                        output_widget("fertility_population_structure"),
+                        ui.div(
+                            ui.input_select(
+                                "fertility_structure_country",
+                                "Population structure country",
+                                choices=FERTILITY_COUNTRY_CHOICES,
+                                selected="KOR",
+                            ),
+                            class_="figure-controls",
+                        ),
+                        ui.div(output_widget("fertility_population_structure"), class_="story-plot-slot"),
                     ),
                     ui.card(
                         ui.card_header("3. Fertility vs Development Proxy"),
-                        output_widget("fertility_socioeconomic_scatter"),
+                        ui.div(
+                            ui.input_select(
+                                "scatter_x_metric",
+                                "Scatter x-axis metric",
+                                choices=SOCIOECONOMIC_METRICS,
+                                selected="population_density",
+                            ),
+                            class_="figure-controls",
+                        ),
+                        ui.div(output_widget("fertility_socioeconomic_scatter"), class_="story-plot-slot"),
                     ),
                     ui.card(
                         ui.card_header("4. K-Means Demographic Clusters"),
-                        output_widget("fertility_kmeans_clusters"),
+                        ui.div(
+                            ui.input_slider(
+                                "cluster_count",
+                                "K-Means clusters",
+                                min=2,
+                                max=8,
+                                value=4,
+                                step=1,
+                            ),
+                            class_="figure-controls",
+                        ),
+                        ui.div(output_widget("fertility_kmeans_clusters"), class_="story-plot-slot"),
                     ),
                     class_="story-dashboard-body",
                 ),
@@ -969,7 +991,11 @@ def server(input, output, session):
             return []
 
         defaults = STORY_CONFIGS[story_id]["isos"]
-        selected = input.story_countries()
+        input_id = "migration_story_countries" if story_id == "migration" else "fertility_story_countries"
+        try:
+            selected = getattr(input, input_id)()
+        except Exception:
+            selected = None
         if selected is None:
             return defaults
         if isinstance(selected, str):
@@ -985,24 +1011,6 @@ def server(input, output, session):
         label = "See story charts about this lens"
         return ui.div(
             ui.input_action_button("open_story", label, class_="story-open-button"),
-            class_="story-sidebar-block",
-        )
-
-    @render.ui
-    def story_country_filter():
-        story_id = active_story()
-        if story_id not in STORY_CONFIGS:
-            return None
-        if not story_panel_open.get():
-            return None
-        return ui.div(
-            ui.input_selectize(
-                "story_countries",
-                "Filter or add countries to story charts",
-                choices=story_choices(story_id),
-                selected=STORY_CONFIGS[story_id]["isos"],
-                multiple=True,
-            ),
             class_="story-sidebar-block",
         )
 
