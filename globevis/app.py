@@ -11,46 +11,63 @@ from shinywidgets import output_widget, render_widget
 
 
 # --- Story Configuration ---
-MIGRATION_OUTFLOW = ["SYR", "YEM"]
-MIGRATION_INFLOW = ["ARE", "QAT", "KWT", "OMN"]
-FERTILITY_ISOS = ["KOR", "TWN", "HKG", "JPN"]
+# Story 1: Refugee Crisis & Geopolitical Shockwaves
+MIGRATION_OUTFLOW = ["SYR"]                         # Out-migration origin
+MIGRATION_NEIGHBORS = ["TUR", "LBN", "JOR"]         # Neighboring hosts
+MIGRATION_LONG = ["DEU"]                            # Long-distance host
+MIGRATION_CONTRAST = ["POL", "UKR"]                 # Historical contrast
+MIGRATION_ISOS = MIGRATION_OUTFLOW + MIGRATION_NEIGHBORS + MIGRATION_LONG + MIGRATION_CONTRAST
+
+# Story 2: Ultra-Low Fertility Cliff
+FERTILITY_COLLAPSE = ["KOR", "TWN", "JPN"]          # Collapse group
+FERTILITY_SCALE = ["CHN"]                           # Scale shift
+FERTILITY_HIGH = ["NER", "TCD", "MLI"]              # High-fertility contrast
+FERTILITY_ISOS = FERTILITY_COLLAPSE + FERTILITY_SCALE + FERTILITY_HIGH
 
 COUNTRY_META = {
-    "SYR": {"name": "Syria", "color": "#ef4444", "role": "Outflow"},
-    "YEM": {"name": "Yemen", "color": "#fb7185", "role": "Outflow"},
-    "ARE": {"name": "United Arab Emirates", "color": "#22d3ee", "role": "Inflow"},
-    "QAT": {"name": "Qatar", "color": "#38bdf8", "role": "Inflow"},
-    "KWT": {"name": "Kuwait", "color": "#67e8f9", "role": "Inflow"},
-    "OMN": {"name": "Oman", "color": "#0ea5e9", "role": "Inflow"},
-    "KOR": {"name": "South Korea", "color": "#ef4444", "role": "Ultra-low fertility"},
-    "TWN": {"name": "Taiwan", "color": "#fb7185", "role": "Ultra-low fertility"},
-    "HKG": {"name": "Hong Kong", "color": "#f97316", "role": "Ultra-low fertility"},
-    "JPN": {"name": "Japan", "color": "#f59e0b", "role": "Ultra-low fertility"},
+    # ── Migration story ──
+    "SYR": {"name": "Syria", "color": "#ef4444", "role": "Out-migration origin"},
+    "TUR": {"name": "Turkey", "color": "#f97316", "role": "Neighboring host"},
+    "LBN": {"name": "Lebanon", "color": "#fb923c", "role": "Neighboring host"},
+    "JOR": {"name": "Jordan", "color": "#fbbf24", "role": "Neighboring host"},
+    "DEU": {"name": "Germany", "color": "#22d3ee", "role": "Long-distance host"},
+    "POL": {"name": "Poland", "color": "#a78bfa", "role": "Historical contrast"},
+    "UKR": {"name": "Ukraine", "color": "#818cf8", "role": "Historical contrast"},
+    # ── Fertility story ──
+    "KOR": {"name": "South Korea", "color": "#ef4444", "role": "Demographic collapse"},
+    "TWN": {"name": "Taiwan", "color": "#fb7185", "role": "Demographic collapse"},
+    "JPN": {"name": "Japan", "color": "#f59e0b", "role": "Demographic collapse"},
+    "CHN": {"name": "China", "color": "#f97316", "role": "Scale shift"},
+    "NER": {"name": "Niger", "color": "#10d97a", "role": "High fertility"},
+    "TCD": {"name": "Chad", "color": "#22d3ee", "role": "High fertility"},
+    "MLI": {"name": "Mali", "color": "#34d399", "role": "High fertility"},
 }
 
 STORY_CONFIGS = {
     "migration": {
-        "label": "Migration hotspots",
+        "label": "Refugee Crisis",
         "indicator": "net_migration_rate",
-        "eyebrow": "Migration hotspots",
-        "title": "Low vs High Migration Rate",
+        "eyebrow": "Refugee Crisis & Geopolitical Shockwaves",
+        "title": "Capturing the Ripple Effects of Displacement",
         "copy": (
-            "The Gulf and the Levant sit close together but tell opposite migration stories. "
-            "Syria and Yemen show war-linked outflow; the Gulf economies show labor-market inflow."
+            "Conflict-driven migration creates asymmetric burdens: small neighboring nations "
+            "absorb displacement waves, while long-distance hosts receive selective inflows. "
+            "Brush the timeline to explore how shocks propagate across borders."
         ),
-        "isos": MIGRATION_OUTFLOW + MIGRATION_INFLOW,
+        "isos": MIGRATION_ISOS,
         "origins": MIGRATION_OUTFLOW,
-        "hosts": MIGRATION_INFLOW,
-        "target": {"longitude": 47, "latitude": 23, "zoom": 1.32},
+        "hosts": MIGRATION_NEIGHBORS + MIGRATION_LONG,
+        "target": {"longitude": 28, "latitude": 38, "zoom": 1.18},
     },
     "fertility": {
-        "label": "Ultra-low fertility",
+        "label": "Fertility Cliff",
         "indicator": "fertility_rate",
-        "eyebrow": "Ultra-low fertility",
-        "title": "Below Replacement in East Asia",
+        "eyebrow": "The Ultra-Low Fertility Cliff",
+        "title": "Tracking East Asia's Demographic Winter",
         "copy": (
-            "To keep a population stable without immigration, fertility needs to sit near 2.1. "
-            "East Asia's richest urban societies now sit far below that line."
+            "South Korea, Taiwan, and Japan have fallen far below the 2.1 replacement level, "
+            "while Niger, Chad, and Mali remain at the opposite extreme. China sits at a pivotal "
+            "scale — the world's largest population now in decline."
         ),
         "isos": FERTILITY_ISOS,
         "origins": [],
@@ -363,25 +380,46 @@ app_ui = ui.page_sidebar(
                 "input.indicator == 'net_migration_rate'",
                 ui.div(
                     story_intro(
-                        "Two Migration Engines",
-                        "Some people move because war pushes them out. Others move because labor markets pull them in. Syria and Yemen sit on the outflow side; the Gulf economies sit on the inflow side.",
+                        "Capturing the Ripple Effects of Displacement",
+                        "Conflict-driven migration creates asymmetric burdens: small neighboring "
+                        "nations absorb displacement waves, while long-distance hosts receive "
+                        "selective inflows. Brush the timeline to explore how shocks propagate "
+                        "across borders."
                     ),
                     ui.div(
-                        ui.span(ui.span(class_="corridor-swatch corridor-origin"), " Outflow pressure"),
-                        ui.span(ui.span(class_="corridor-swatch corridor-host"), " Labor-market inflow"),
+                        ui.span(ui.span(class_="corridor-swatch corridor-origin"), " Out-migration origin"),
+                        ui.span(ui.span(class_="corridor-swatch corridor-host"), " Host / receiving"),
+                        ui.span(ui.span(class_="corridor-swatch", style="background:#a78bfa;color:#a78bfa;"), " Contrast"),
                         class_="corridor-legend",
                     ),
-                    ui.card(
-                        ui.card_header("Net Migration Over Time"),
-                        output_widget("migration_rate_lines"),
+                    ui.div(
+                        ui.input_select(
+                            "migration_focus_country",
+                            "Select country for forecast & age structure",
+                            choices={iso: country_name(iso) for iso in MIGRATION_ISOS},
+                            selected=MIGRATION_OUTFLOW[0],
+                        ),
+                        class_="story-sidebar-block",
                     ),
-                    story_intro(
-                        "The Extremes",
-                        "The same metric captures both halves of the story: negative shocks when people leave, and positive spikes where receiving economies absorb workers.",
-                    ),
+                    # Fig 1: Multi-line net migration with brushing
                     ui.card(
-                        ui.card_header("Peak Migration Shock"),
-                        output_widget("migration_peak_shocks"),
+                        ui.card_header("Net Migration Rate 1990–2023 (brush to filter)"),
+                        output_widget("migration_multiline"),
+                    ),
+                    # Fig 2: Migration burden bar chart
+                    ui.card(
+                        ui.card_header("Migration Burden by Country"),
+                        output_widget("migration_burden_bars"),
+                    ),
+                    # Fig 3: Population structure
+                    ui.card(
+                        ui.card_header("Population Age Structure"),
+                        output_widget("migration_age_structure"),
+                    ),
+                    # Fig 4: ARIMA forecast
+                    ui.card(
+                        ui.card_header("ARIMA Forecast with Confidence Ribbon"),
+                        output_widget("migration_arima_forecast"),
                     ),
                     class_="story-dashboard-body",
                 ),
@@ -390,31 +428,50 @@ app_ui = ui.page_sidebar(
                 "input.indicator == 'fertility_rate'",
                 ui.div(
                     story_intro(
-                        "Below Replacement",
-                        "Replacement fertility is about 2.1 children per woman. South Korea, Taiwan, Hong Kong, and Japan all fall far below that benchmark.",
-                        "The drivers are not one thing: urban housing costs, work culture, delayed marriage, and child-rearing expectations all compress family formation.",
+                        "Tracking East Asia's Demographic Winter",
+                        "South Korea, Taiwan, and Japan have fallen far below the 2.1 replacement "
+                        "level, while Niger, Chad, and Mali remain at the opposite extreme. "
+                        "China sits at a pivotal scale — the world's largest population now in decline."
                     ),
                     ui.div(
                         ui.span(ui.span(class_="corridor-swatch fertility-low"), " Ultra-low fertility"),
                         ui.span(ui.span(class_="corridor-swatch fertility-replacement"), " Replacement 2.1"),
+                        ui.span(ui.span(class_="corridor-swatch", style="background:#10d97a;color:#10d97a;"), " High fertility"),
                         class_="corridor-legend",
                     ),
-                    ui.card(
-                        ui.card_header("Fertility vs Replacement"),
-                        output_widget("fertility_replacement_lines"),
+                    ui.div(
+                        ui.input_select(
+                            "fertility_focus_country",
+                            "Select country for age structure comparison",
+                            choices={iso: country_name(iso) for iso in FERTILITY_ISOS},
+                            selected=FERTILITY_COLLAPSE[0],
+                        ),
+                        class_="story-sidebar-block",
                     ),
+                    # Fig 1: Dual-axis multi-line TFR
                     ui.card(
-                        ui.card_header("Lowest Fertility Ranking"),
-                        output_widget("fertility_lowest_ranking"),
+                        ui.card_header("Fertility Rate vs Replacement Level"),
+                        output_widget("fertility_multiline"),
                     ),
-                    story_intro(
-                        "Extinction Watch",
-                        "If current trends continue, some countries face fertility rates so low that their populations could halve within a generation. Below are the 12 countries projected to have the lowest fertility by 2040.",
-                        "Diamond markers show where each country stood in 2023. The red bars show where linear regression projects them in 2040.",
-                    ),
+                    # Fig 2: Population age structure comparison
                     ui.card(
-                        ui.card_header("Lowest Projected Fertility 2040"),
-                        output_widget("extinction_watch"),
+                        ui.card_header("Population Age Structure: Pyramid vs Inverted Block"),
+                        output_widget("fertility_age_structure"),
+                    ),
+                    # Fig 3: Socioeconomic scatter
+                    ui.card(
+                        ui.card_header("Urban Density vs Fertility (Global Context)"),
+                        output_widget("fertility_scatter"),
+                    ),
+                    # Fig 4: K-Means clustering
+                    ui.card(
+                        ui.card_header("K-Means Clustering: Demographic Winter Detection"),
+                        ui.input_slider(
+                            "kmeans_k",
+                            "Number of Clusters (K)",
+                            min=2, max=8, value=3, step=1,
+                        ),
+                        output_widget("fertility_kmeans"),
                     ),
                     class_="story-dashboard-body",
                 ),
@@ -430,8 +487,22 @@ app_ui = ui.page_sidebar(
 
 def server(input, output, session):
     selected_country = reactive.Value(None)
-    story_panel_open = reactive.Value(False)
+    story_locked_indicator = reactive.Value(None)  # indicator when story was explicitly opened
     theme = reactive.Value("dark")
+    # Cross-filtering state for story charts
+    story_brushed_years = reactive.Value(None)       # (min_year, max_year) from brush
+    story_selected_country = reactive.Value(None)     # iso from clicking story charts
+    story_migration_base_year = reactive.Value(1990)  # start year for migration charts
+
+    @reactive.Calc
+    def story_panel_open() -> bool:
+        """Panel is open only when indicator hasn't changed since opening.
+        Depends on input.indicator() so mismatch is caught at Calc-time,
+        BEFORE any story charts get a chance to render."""
+        locked = story_locked_indicator.get()
+        if locked is None:
+            return False
+        return locked == input.indicator()
 
     @reactive.Calc
     def plotly_template() -> str:
@@ -472,20 +543,178 @@ def server(input, output, session):
     def _sync_slider_range():
         ui.update_slider("timeline_year", max=effective_max_year())
 
+    # ── Story Cross-Filtering Reactives ──────────────────────────────
+    @reactive.Calc
+    def story_effective_year() -> int:
+        """Year used for snapshot charts: brushed midpoint or slider year."""
+        brush = story_brushed_years.get()
+        if brush is not None:
+            return int(round((brush[0] + brush[1]) / 2))
+        return input.timeline_year()
+
+    @reactive.Calc
+    def story_migration_data() -> pd.DataFrame:
+        """Filtered data for migration story countries, 1990 onward."""
+        return df_countries[
+            df_countries["iso_alpha"].isin(MIGRATION_ISOS)
+            & df_countries["year"].ge(story_migration_base_year.get())
+        ].copy()
+
+    @reactive.Calc
+    def story_fertility_data() -> pd.DataFrame:
+        """Filtered data for fertility story countries."""
+        return df_countries[
+            df_countries["iso_alpha"].isin(FERTILITY_ISOS)
+        ].copy()
+
+    @reactive.Calc
+    def story_global_2023() -> pd.DataFrame:
+        """All countries, latest historical year, for scatter/clustering."""
+        return df_countries[
+            df_countries["year"].eq(2023)
+            & df_countries["fertility_rate"].notna()
+            & df_countries["population_density"].notna()
+            & df_countries["pop"].fillna(0).gt(500_000)
+        ].copy()
+
+    @reactive.Calc
+    def story_kmeans_result() -> dict:
+        """K-Means clustering on global 2023 data. Re-runs when K changes."""
+        from sklearn.cluster import KMeans
+        from sklearn.preprocessing import StandardScaler
+        k = input.kmeans_k() if hasattr(input, 'kmeans_k') else 3
+        try:
+            k = int(k)
+        except Exception:
+            k = 3
+        k = max(2, min(8, k))
+
+        data = story_global_2023()
+        feats = ["fertility_rate", "lifeExp", "population_growth_rate", "child_mortality"]
+        X = data[feats].dropna()
+        if len(X) < k:
+            return {"labels": [], "centers": None, "pca": None, "isos": [], "k": k}
+
+        X_scaled = StandardScaler().fit_transform(X)
+        km = KMeans(n_clusters=k, random_state=42, n_init=10).fit(X_scaled)
+
+        from sklearn.decomposition import PCA
+        pca = PCA(n_components=2).fit_transform(X_scaled)
+
+        return {
+            "labels": km.labels_.tolist(),
+            "centers": km.cluster_centers_,
+            "pca": pca,
+            "isos": data.loc[X.index, "iso_alpha"].tolist(),
+            "k": k,
+        }
+
+    @reactive.Calc
+    def _cached_arima_forecast() -> dict:
+        """Cached ARIMA forecast — only re-fits when country or projection changes.
+        Returns None if story is not open, empty dict on failure."""
+        if open_story_id() != "migration":
+            return {}
+        sel_iso = input.migration_focus_country() or MIGRATION_OUTFLOW[0]
+        country_df = df_countries[
+            df_countries["iso_alpha"].eq(sel_iso)
+        ].sort_values("year")
+        if country_df.empty:
+            return {}
+
+        hist = country_df[country_df["year"].between(1990, 2023)]
+        series = hist["net_migration_rate"].dropna()
+        if len(series) < 10:
+            return {}
+
+        result = {"iso": sel_iso, "historical_years": hist["year"].tolist(),
+                  "historical_values": hist["net_migration_rate"].tolist(),
+                  "pred_years": list(range(2024, 2041)), "success": False}
+
+        # Try ARIMA first
+        try:
+            from statsmodels.tsa.arima.model import ARIMA
+            model = ARIMA(series.values, order=(2, 1, 2))
+            fit = model.fit()
+            forecast = fit.get_forecast(steps=17)
+            result["mean"] = forecast.predicted_mean.tolist()
+            ci = forecast.conf_int(alpha=0.05)
+            result["ci_lower"] = ci[:, 0].tolist()
+            result["ci_upper"] = ci[:, 1].tolist()
+            result["success"] = True
+            result["method"] = "ARIMA(2,1,2)"
+            return result
+        except Exception:
+            pass
+
+        # Fallback: linear regression with ±2σ band
+        try:
+            X = np.arange(len(series)).reshape(-1, 1).astype(float)
+            y = series.values.astype(float)
+            from sklearn.linear_model import LinearRegression
+            lr = LinearRegression().fit(X, y)
+            residuals = y - lr.predict(X)
+            std = float(np.std(residuals))
+            pred_idx = np.arange(len(series), len(series) + 17).reshape(-1, 1).astype(float)
+            pred_mean = lr.predict(pred_idx)
+            result["mean"] = pred_mean.tolist()
+            result["ci_lower"] = (pred_mean - 2 * std).tolist()
+            result["ci_upper"] = (pred_mean + 2 * std).tolist()
+            result["success"] = True
+            result["method"] = "Linear trend ±2σ"
+            return result
+        except Exception:
+            return result
+
+    @reactive.Calc
+    def _cached_scatter_data() -> dict:
+        """Pre-computed scatter data for fertility Fig 3. Cached globally."""
+        data = story_global_2023()
+        if data.empty:
+            return {"x": [], "y": [], "countries": [], "isos": [], "trend_x": [], "trend_y": []}
+
+        valid = data.dropna(subset=["population_density", "fertility_rate"])
+        result = {
+            "x": valid["population_density"].tolist(),
+            "y": valid["fertility_rate"].tolist(),
+            "countries": valid["country"].tolist(),
+            "isos": valid["iso_alpha"].tolist(),
+        }
+
+        # Polynomial trend line
+        try:
+            x = valid["population_density"].values
+            y = valid["fertility_rate"].values
+            coeffs = np.polyfit(x, y, 2)
+            x_trend = np.linspace(x.min(), x.max(), 100)
+            y_trend = np.polyval(coeffs, x_trend)
+            result["trend_x"] = x_trend.tolist()
+            result["trend_y"] = y_trend.tolist()
+        except Exception:
+            result["trend_x"] = []
+            result["trend_y"] = []
+
+        return result
+
     @reactive.Calc
     def active_story() -> str | None:
         return story_from_indicator(input.indicator())
 
     @reactive.Calc
     def open_story_id() -> str | None:
+        """Returns story_id only when panel is open. story_panel_open Calc
+        already catches indicator changes at Calc-time, so charts never render
+        for a story that should be closed."""
+        if not story_panel_open():
+            return None
         story_id = active_story()
-        if story_panel_open.get() and story_id in STORY_CONFIGS:
+        if story_id in STORY_CONFIGS:
             return story_id
         return None
 
     @reactive.Calc
     def selected_story_isos() -> list[str]:
-        story_id = open_story_id() or active_story()
+        story_id = open_story_id()
         if story_id not in STORY_CONFIGS:
             return []
 
@@ -514,7 +743,7 @@ def server(input, output, session):
         story_id = active_story()
         if story_id not in STORY_CONFIGS:
             return None
-        if not story_panel_open.get():
+        if not story_panel_open():
             return None
         return ui.div(
             ui.input_selectize(
@@ -530,18 +759,34 @@ def server(input, output, session):
     @reactive.Effect
     @reactive.event(input.indicator)
     def handle_indicator_change():
-        story_panel_open.set(False)
+        """Clear lock → story_panel_open Calc immediately returns False at Calc-time."""
+        story_locked_indicator.set(None)
 
     @reactive.Effect
     @reactive.event(input.open_story)
     def handle_open_story():
         if active_story() in STORY_CONFIGS:
-            story_panel_open.set(True)
+            story_locked_indicator.set(input.indicator())  # lock to current indicator
 
     @reactive.Effect
     @reactive.event(input.close_story_panel)
     def handle_close_story_panel():
-        story_panel_open.set(False)
+        story_locked_indicator.set(None)
+
+    # ── Cross-Filtering: Country Selectors ──────────────────────────
+    @reactive.Effect
+    @reactive.event(input.migration_focus_country)
+    def _sync_migration_focus():
+        iso = input.migration_focus_country()
+        if iso:
+            story_selected_country.set(iso)
+
+    @reactive.Effect
+    @reactive.event(input.fertility_focus_country)
+    def _sync_fertility_focus():
+        iso = input.fertility_focus_country()
+        if iso:
+            story_selected_country.set(iso)
 
     @render.ui
     def story_dashboard_header_text():
@@ -864,6 +1109,11 @@ def server(input, output, session):
             },
         )
 
+    def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
+        """Convert hex color like '#ef4444' to RGB tuple."""
+        h = hex_color.lstrip("#")
+        return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+
     def add_country_lines(
         fig: go.Figure,
         country_df: pd.DataFrame,
@@ -944,8 +1194,13 @@ def server(input, output, session):
         fig.update_yaxes(title_text=y_title, gridcolor=ct["gridcolor"])
         return fig
 
+    # ═══════════════════════════════════════════════════════════════════
+    # Story 1: Refugee Crisis & Geopolitical Shockwaves (Migration)
+    # ═══════════════════════════════════════════════════════════════════
+
     @render_widget
-    def migration_rate_lines():
+    def migration_multiline():
+        """Fig 1: Multi-line net migration 1990–2023 with ARIMA forecast overlay."""
         if open_story_id() != "migration":
             return go.Figure()
         selected_isos = selected_story_isos()
@@ -954,229 +1209,459 @@ def server(input, output, session):
 
         for iso in selected_isos:
             country_df = df_countries[df_countries["iso_alpha"].eq(iso)].sort_values("year")
+            if country_df.empty:
+                continue
+            hist = country_df[country_df["year"].le(2023)]
             is_outflow = iso in MIGRATION_OUTFLOW
             add_country_lines(
-                fig, country_df, "net_migration_rate",
+                fig, hist, "net_migration_rate",
                 name=country_name(iso),
                 color=COUNTRY_META[iso]["color"],
-                width=3 if is_outflow else 2.4,
+                width=3.2 if is_outflow else 2.2,
                 dash_solid="solid" if is_outflow else "dot",
+                show_pred=False,
+            )
+
+        fig.add_hline(y=0, line_width=1.5, line_dash="dot", line_color="#94a3b8")
+        fig = apply_story_layout(fig, "Migrants per 1,000 people", 460)
+        fig.update_layout(
+            dragmode="select",
+            selectdirection="h",
+            xaxis=dict(range=[1990, 2043]),
+        )
+        return fig
+
+    # ── FigureWidgets for frequently-updated charts ──────────────────
+    _mig_burden_fig = go.FigureWidget()
+    _mig_burden_fig.add_bar(y=[], x=[], orientation="h", marker_color=[], text=[],
+                             hovertemplate="%{y}<br>%{x:+.2f} per 1,000<extra></extra>")
+    _mig_burden_fig.add_vline(x=0, line_width=1.5, line_dash="dot", line_color="#94a3b8")
+    _mig_burden_fig.update_layout(showlegend=False, margin=dict(l=30, r=24, t=24, b=54),
+                                    plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)", height=350)
+    _mig_burden_fig.update_yaxes(automargin=True)
+    _mig_burden_fig.update_xaxes(title_text="Net migration rate")
+
+    _mig_age_fig = go.FigureWidget()
+    _mig_age_fig.add_bar(y=[], x=[], orientation="h", marker_color=[], text=[],
+                          hovertemplate="%{y}: %{x:.1f}%<extra></extra>")
+    _mig_age_fig.update_layout(plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+                                 height=380, showlegend=False, margin=dict(l=30, r=24, t=40, b=54))
+    _mig_age_fig.update_xaxes(title_text="% of population")
+    _mig_age_fig.update_yaxes()
+
+    @render_widget
+    def migration_burden_bars():
+        """Fig 2: Migration burden — updated via reactive effect."""
+        return _mig_burden_fig
+
+    @reactive.Effect
+    def _update_migration_burden_bars():
+        """Update burden bars data when year or countries change.
+        Clears data immediately when story closes."""
+        if open_story_id() != "migration":
+            with _mig_burden_fig.batch_update():
+                _mig_burden_fig.data[0].y = []
+                _mig_burden_fig.data[0].x = []
+                _mig_burden_fig.data[0].text = []
+            return
+        year = story_effective_year()
+        selected_isos = selected_story_isos()
+
+        rows = []
+        for iso in selected_isos:
+            country_df = df_countries[
+                df_countries["iso_alpha"].eq(iso)
+                & df_countries["year"].eq(year)
+            ]
+            if country_df.empty:
+                continue
+            rows.append({
+                "country": country_name(iso),
+                "iso": iso,
+                "value": float(country_df["net_migration_rate"].iloc[0]),
+            })
+        rows.sort(key=lambda r: r["value"])
+
+        ct = _chart_theme()
+        year_labels = [f"{r['value']:+.1f}" for r in rows]
+        with _mig_burden_fig.batch_update():
+            _mig_burden_fig.data[0].y = [r["country"] for r in rows]
+            _mig_burden_fig.data[0].x = [r["value"] for r in rows]
+            _mig_burden_fig.data[0].marker.color = [COUNTRY_META[r["iso"]]["color"] for r in rows]
+            _mig_burden_fig.data[0].text = year_labels
+            _mig_burden_fig.layout.template = ct["template"]
+            _mig_burden_fig.layout.xaxis.title.text = f"Net migration rate ({year})"
+            _mig_burden_fig.layout.xaxis.gridcolor = ct["gridcolor"]
+            _mig_burden_fig.layout.yaxis.gridcolor = ct["gridcolor"]
+
+    @render_widget
+    def migration_age_structure():
+        """Fig 3: Age structure — updated via reactive effect."""
+        return _mig_age_fig
+
+    @reactive.Effect
+    def _update_migration_age_structure():
+        """Update age structure data when year or country changes.
+        Clears data immediately when story closes."""
+        if open_story_id() != "migration":
+            with _mig_age_fig.batch_update():
+                _mig_age_fig.data[0].y = []
+                _mig_age_fig.data[0].x = []
+                _mig_age_fig.data[0].text = []
+                _mig_age_fig.layout.title = ""
+            return
+        year = story_effective_year()
+        sel_iso = input.migration_focus_country() or MIGRATION_OUTFLOW[0]
+        country_df = df_countries[
+            df_countries["iso_alpha"].eq(sel_iso)
+            & df_countries["year"].eq(year)
+        ]
+        if country_df.empty:
+            return
+
+        row = country_df.iloc[0]
+        age_groups = ["0-4", "5-14", "15-24", "25-64", "65+"]
+        age_cols = ["age_0_4", "age_5_14", "age_15_24", "age_25_64", "age_65_plus"]
+        values = [float(row[c]) for c in age_cols]
+        total = sum(values)
+        percentages = [v / total * 100 for v in values]
+
+        ct = _chart_theme()
+        with _mig_age_fig.batch_update():
+            _mig_age_fig.data[0].y = age_groups
+            _mig_age_fig.data[0].x = percentages
+            _mig_age_fig.data[0].marker.color = [
+                "#818cf8" if g == "25-64" else "#ef4444" if g == "15-24" else "#94a3b8"
+                for g in age_groups
+            ]
+            _mig_age_fig.data[0].text = [f"{p:.1f}%" for p in percentages]
+            _mig_age_fig.layout.template = ct["template"]
+            _mig_age_fig.layout.title = f"{country_name(sel_iso)} age structure ({year})"
+            _mig_age_fig.layout.title.font.color = ct["text_primary"]
+            _mig_age_fig.layout.xaxis.gridcolor = ct["gridcolor"]
+            _mig_age_fig.layout.xaxis.title.font.color = ct["text_secondary"]
+            _mig_age_fig.layout.yaxis.gridcolor = ct["gridcolor"]
+
+    @render_widget
+    def migration_arima_forecast():
+        """Fig 4: ARIMA forecast with confidence ribbon — uses cached calc."""
+        if open_story_id() != "migration":
+            return go.Figure()
+
+        fc = _cached_arima_forecast()
+        if not fc or not fc.get("success"):
+            return go.Figure()
+
+        ct = _chart_theme()
+        sel_iso = fc["iso"]
+        fig = go.Figure()
+
+        # Historical line
+        fig.add_scatter(
+            x=fc["historical_years"], y=fc["historical_values"],
+            mode="lines+markers",
+            name=f"{country_name(sel_iso)} historical",
+            line=dict(color=COUNTRY_META[sel_iso]["color"], width=2.5),
+            marker=dict(size=4),
+        )
+
+        # Forecast line
+        fig.add_scatter(
+            x=fc["pred_years"], y=fc["mean"],
+            mode="lines",
+            name=fc.get("method", "Forecast"),
+            line=dict(color=COUNTRY_META[sel_iso]["color"], width=2, dash="dash"),
+        )
+
+        # Confidence ribbon
+        if fc.get("ci_lower") and fc.get("ci_upper"):
+            fig.add_scatter(
+                x=fc["pred_years"] + fc["pred_years"][::-1],
+                y=fc["ci_lower"] + fc["ci_upper"][::-1],
+                fill="toself",
+                fillcolor=f"rgba({','.join(str(int(c)) for c in _hex_to_rgb(COUNTRY_META[sel_iso]['color']))},0.15)",
+                line=dict(width=0),
+                name="95% CI",
+                showlegend=True,
             )
 
         fig.add_hline(y=0, line_width=1, line_dash="dot", line_color="#94a3b8")
-        return apply_story_layout(fig, "Migrants per 1,000 people", 420)
+        fig.add_vline(x=2023, line_width=1.5, line_dash="dash", line_color=ct["text_secondary"],
+                       annotation_text="Forecast start", annotation_position="top")
 
-    @render_widget
-    def migration_peak_shocks():
-        if open_story_id() != "migration":
-            return go.Figure()
-        rows = []
-        for iso in selected_story_isos():
-            country_df = df_countries[df_countries["iso_alpha"].eq(iso)]
-            if country_df.empty:
-                continue
-            if iso in MIGRATION_OUTFLOW:
-                row = country_df.loc[country_df["net_migration_rate"].idxmin()]
-                value_label = "Worst outflow"
-            else:
-                row = country_df.loc[country_df["net_migration_rate"].idxmax()]
-                value_label = "Strongest inflow"
-            rows.append(
-                {
-                    "country": country_name(iso),
-                    "iso": iso,
-                    "value": float(row["net_migration_rate"]),
-                    "year": int(row["year"]),
-                    "type": value_label,
-                }
-            )
-
-        rows = sorted(rows, key=lambda row: row["value"])
-        fig = go.Figure()
-        fig.add_bar(
-            y=[row["country"] for row in rows],
-            x=[row["value"] for row in rows],
-            orientation="h",
-            marker_color=[
-                "#ef4444" if row["iso"] in MIGRATION_OUTFLOW else "#22d3ee"
-                for row in rows
-            ],
-            text=[f"{row['value']:+.1f} ({row['year']})" for row in rows],
-            textposition="auto",
-            hovertemplate="%{y}<br>%{x:+.2f} per 1,000<extra></extra>",
+        fig = apply_story_layout(fig, "Migrants per 1,000 people", 420)
+        fig.update_layout(
+            xaxis=dict(range=[1990, 2043]),
+            legend=dict(orientation="h", yanchor="top", y=-0.22, xanchor="left", x=0,
+                        bgcolor=ct["legend_bg"], bordercolor=ct["gridcolor"],
+                        borderwidth=1, font=dict(color=ct["legend_font"], size=11)),
         )
-        fig.add_vline(x=0, line_width=1, line_dash="dot", line_color="#e2e8f0")
-        fig = apply_story_layout(fig, "Net migration rate", 390)
-        fig.update_yaxes(automargin=True)
-        fig.update_layout(showlegend=False, margin=dict(l=30, r=24, t=24, b=54))
         return fig
 
+    # ═══════════════════════════════════════════════════════════════════
+    # Story 2: Ultra-Low Fertility Cliff
+    # ═══════════════════════════════════════════════════════════════════
+
     @render_widget
-    def fertility_replacement_lines():
+    def fertility_multiline():
+        """Fig 1: Dual-axis multi-line TFR with replacement level marker."""
         if open_story_id() != "fertility":
             return go.Figure()
         selected_isos = selected_story_isos()
         fig = go.Figure()
 
+        # World average for context
         if not df_world.empty:
             world = df_world.sort_values("year")
-            add_country_lines(
-                fig, world, "fertility_rate",
-                name="World", color="#e2e8f0", width=3, dash_solid="dot",
+            world_hist = world[world["year"].le(2023)]
+            fig.add_scatter(
+                x=world_hist["year"], y=world_hist["fertility_rate"],
+                mode="lines",
+                name="World average",
+                line=dict(color="#94a3b8", width=3, dash="dot"),
             )
 
         for iso in selected_isos:
             country_df = df_countries[df_countries["iso_alpha"].eq(iso)].sort_values("year")
+            if country_df.empty:
+                continue
             add_country_lines(
                 fig, country_df, "fertility_rate",
                 name=country_name(iso),
-                color=COUNTRY_META[iso]["color"], width=2.7,
+                color=COUNTRY_META[iso]["color"],
+                width=2.7,
             )
 
+        # 2.1 replacement reference line
         fig.add_hline(
-            y=2.1,
-            line_width=2,
-            line_dash="dash",
-            line_color="#94a3b8",
-            annotation_text="Replacement 2.1",
-            annotation_position="top left",
+            y=2.1, line_width=2.5, line_dash="dash", line_color="#94a3b8",
+            annotation_text="Replacement level 2.1", annotation_position="top left",
         )
 
+        # Annotate Korea's minimum
         if "KOR" in selected_isos:
             korea = df_countries[df_countries["iso_alpha"].eq("KOR")]
             korea = korea[korea["fertility_rate"].notna()]
             if not korea.empty:
                 low = korea.loc[korea["fertility_rate"].idxmin()]
                 fig.add_annotation(
-                    x=int(low["year"]),
-                    y=float(low["fertility_rate"]),
+                    x=int(low["year"]), y=float(low["fertility_rate"]),
                     text=f"Korea {low['fertility_rate']:.2f}",
-                    showarrow=True,
-                    arrowhead=2,
-                    ax=-18,
-                    ay=-34,
-                    font=dict(size=11, color="#f8fafc"),
+                    showarrow=True, arrowhead=2, ax=-18, ay=-34,
+                    font=dict(size=11, color=_chart_theme()["text_primary"]),
                 )
 
-        return apply_story_layout(fig, "Children per woman", 420)
-
-    @render_widget
-    def fertility_lowest_ranking():
-        if open_story_id() != "fertility":
-            return go.Figure()
-        year = input.timeline_year()
-        year_df = df_countries[
-            df_countries["year"].eq(year)
-            & df_countries["fertility_rate"].notna()
-            & df_countries["pop"].fillna(0).gt(500_000)
-        ].copy()
-        year_df = year_df.nsmallest(12, "fertility_rate").sort_values("fertility_rate", ascending=True)
-        selected = set(selected_story_isos())
-
-        fig = go.Figure()
-        fig.add_bar(
-            y=year_df["country"],
-            x=year_df["fertility_rate"],
-            orientation="h",
-            marker_color=[
-                COUNTRY_META.get(iso, {}).get("color", "#64748b") if iso in selected else "#64748b"
-                for iso in year_df["iso_alpha"]
-            ],
-            text=[f"{value:.2f}" for value in year_df["fertility_rate"]],
-            textposition="auto",
-            hovertemplate="%{y}<br>%{x:.2f} children per woman<extra></extra>",
-        )
-        fig.add_vline(x=2.1, line_width=2, line_dash="dash", line_color="#94a3b8")
-        fig.add_annotation(
-            x=2.1,
-            y=0.98,
-            yref="paper",
-            text="Replacement 2.1",
-            showarrow=False,
-            font=dict(color="#cbd5e1", size=11),
-        )
-        fig = apply_story_layout(fig, "Children per woman", 430)
-        fig.update_layout(showlegend=False, margin=dict(l=30, r=24, t=24, b=54))
-        fig.update_yaxes(automargin=True)
+        fig = apply_story_layout(fig, "Children per woman", 460)
+        fig.update_layout(xaxis=dict(range=[1960, 2043]))
         return fig
 
-
     @render_widget
-    def extinction_watch():
-        """Show countries projected to have critically low fertility by 2040."""
+    def fertility_age_structure():
+        """Fig 2: Age structure comparison — pyramid (1990) vs inverted block (2023)."""
         if open_story_id() != "fertility":
             return go.Figure()
-        if not has_predictions() or not input.show_projections():
-            return go.Figure()
-
+        sel_iso = input.fertility_focus_country() or FERTILITY_COLLAPSE[0]
+        year_past = 1990
         year_now = 2023
-        year_future = 2040
 
-        # Get 2023 and 2040 data
-        df_2023 = df_countries[
-            df_countries["year"].eq(year_now)
-            & df_countries["fertility_rate"].notna()
-            & df_countries["pop"].fillna(0).gt(500_000)
-        ].copy()
-        df_2040 = df_countries[
-            df_countries["year"].eq(year_future)
-            & df_countries["fertility_rate"].notna()
-            & df_countries["pop"].fillna(0).gt(500_000)
-        ].copy()
+        ct = _chart_theme()
+        age_groups = ["0-4", "5-14", "15-24", "25-64", "65+"]
+        age_cols = ["age_0_4", "age_5_14", "age_15_24", "age_25_64", "age_65_plus"]
 
-        if df_2040.empty:
+        fig = go.Figure()
+        for yr, dash_style, alpha in [(year_past, "dash", 0.55), (year_now, "solid", 1.0)]:
+            cdf = df_countries[
+                df_countries["iso_alpha"].eq(sel_iso)
+                & df_countries["year"].eq(yr)
+            ]
+            if cdf.empty:
+                continue
+            row = cdf.iloc[0]
+            values = [float(row[c]) for c in age_cols]
+            total = sum(values)
+            pcts = [v / total * 100 for v in values]
+
+            fig.add_scatter(
+                x=pcts, y=age_groups,
+                mode="lines+markers",
+                name=f"{yr}",
+                line=dict(color=COUNTRY_META[sel_iso]["color"], width=2.5, dash=dash_style),
+                marker=dict(size=8, symbol="circle"),
+                opacity=alpha,
+                hovertemplate="%{y}<br>%{x:.1f}%<extra></extra>",
+            )
+
+        fig.update_layout(
+            template=ct["template"],
+            title=f"{country_name(sel_iso)} age structure: {year_past} → {year_now}",
+            title_font=dict(size=14, color=ct["text_primary"]),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            height=400,
+            margin=dict(l=30, r=24, t=40, b=54),
+            hovermode="y unified",
+        )
+        fig.update_xaxes(title_text="% of population", gridcolor=ct["gridcolor"],
+                         title_font=dict(color=ct["text_secondary"]))
+        fig.update_yaxes(gridcolor=ct["gridcolor"])
+        return fig
+
+    @render_widget
+    def fertility_scatter():
+        """Fig 3: Socioeconomic scatter — uses cached data for performance."""
+        if open_story_id() != "fertility":
+            return go.Figure()
+        ct = _chart_theme()
+        cached = _cached_scatter_data()
+        if not cached.get("x"):
             return go.Figure()
 
-        # Top 12 lowest predicted fertility in 2040
-        top12 = df_2040.nsmallest(12, "fertility_rate").sort_values("fertility_rate", ascending=True)
-        selected = set(selected_story_isos())
+        target_isos = set(selected_story_isos())
 
         fig = go.Figure()
 
-        # 2040 predicted bar
-        fig.add_bar(
-            y=top12["country"],
-            x=top12["fertility_rate"],
-            orientation="h",
-            name="2040 projected",
-            marker_color=[
-                COUNTRY_META.get(iso, {}).get("color", "#ef4444") if iso in selected else "#ef4444"
-                for iso in top12["iso_alpha"]
-            ],
-            text=[f"{v:.2f}" for v in top12["fertility_rate"]],
-            textposition="auto",
-            hovertemplate="%{y}<br>2040: %{x:.2f}<extra></extra>",
-        )
+        # All countries (gray background) — split target vs non-target
+        non_tgt_x, non_tgt_y, non_tgt_text = [], [], []
+        for i, iso in enumerate(cached["isos"]):
+            if iso not in target_isos:
+                non_tgt_x.append(cached["x"][i])
+                non_tgt_y.append(cached["y"][i])
+                non_tgt_text.append(cached["countries"][i])
 
-        # 2023 marker overlay
-        iso_2023_map = {}
-        for _, r in df_2023.iterrows():
-            iso_2023_map[r["iso_alpha"]] = r["fertility_rate"]
-
-        markers_2023 = [iso_2023_map.get(iso, None) for iso in top12["iso_alpha"]]
         fig.add_scatter(
-            x=markers_2023,
-            y=top12["country"],
+            x=non_tgt_x, y=non_tgt_y,
             mode="markers",
-            name="2023 actual",
-            marker=dict(color="#f8fafc", size=10, symbol="diamond", line=dict(color="#0f172a", width=1)),
-            hovertemplate="%{y}<br>2023: %{x:.2f}<extra></extra>",
+            name="All countries",
+            marker=dict(color="#64748b", size=7, opacity=0.45),
+            text=non_tgt_text,
+            hovertemplate="%{text}<br>Density: %{x:.1f}/km²<br>TFR: %{y:.2f}<extra></extra>",
         )
 
-        fig.add_vline(x=2.1, line_width=2, line_dash="dash", line_color="#94a3b8")
-        fig.add_annotation(
-            x=2.1, y=0.98, yref="paper",
-            text="Replacement 2.1",
-            showarrow=False,
-            font=dict(color="#cbd5e1", size=11),
-        )
+        # Target countries highlighted
+        for i, iso in enumerate(cached["isos"]):
+            if iso in target_isos:
+                fig.add_scatter(
+                    x=[cached["x"][i]], y=[cached["y"][i]],
+                    mode="markers+text",
+                    name=country_name(iso),
+                    marker=dict(color=COUNTRY_META.get(iso, {}).get("color", "#818cf8"),
+                                size=14, symbol="diamond",
+                                line=dict(color="white" if theme.get() == "dark" else "#0f172a", width=1.5)),
+                    text=[country_name(iso)],
+                    textposition="top center",
+                    textfont=dict(size=11, color=ct["text_primary"]),
+                    hovertemplate="%{text}<br>Density: %{x:.1f}/km²<br>TFR: %{y:.2f}<extra></extra>",
+                )
 
-        fig = apply_story_layout(fig, "Children per woman", 430)
-        fig.update_layout(showlegend=True, margin=dict(l=30, r=24, t=24, b=54),
-                          legend=dict(orientation="h", yanchor="top", y=-0.18, xanchor="left", x=0,
-                                      bgcolor="rgba(15, 23, 42, 0.78)", bordercolor="rgba(255,255,255,0.10)",
-                                      borderwidth=1, font=dict(color="#f8fafc", size=12)))
-        fig.update_yaxes(automargin=True)
+        # Pre-computed trend line
+        if cached.get("trend_x"):
+            fig.add_scatter(
+                x=cached["trend_x"], y=cached["trend_y"],
+                mode="lines",
+                name="Global trend (quadratic)",
+                line=dict(color="#fbbf24", width=2.5, dash="dash"),
+                hoverinfo="skip",
+            )
+
+        fig.add_hline(y=2.1, line_width=1.5, line_dash="dot", line_color="#94a3b8",
+                       annotation_text="Replacement 2.1", annotation_position="top right")
+
+        fig.update_layout(
+            template=ct["template"],
+            title="Population Density vs Fertility Rate (2023)",
+            title_font=dict(size=14, color=ct["text_primary"]),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            height=420,
+            margin=dict(l=30, r=24, t=40, b=74),
+            legend=dict(orientation="h", yanchor="top", y=-0.18, xanchor="left", x=0,
+                        bgcolor=ct["legend_bg"], bordercolor=ct["gridcolor"],
+                        borderwidth=1, font=dict(color=ct["legend_font"], size=10)),
+        )
+        fig.update_xaxes(title_text="Population density (people/km²)", type="log",
+                         gridcolor=ct["gridcolor"], title_font=dict(color=ct["text_secondary"]))
+        fig.update_yaxes(title_text="Fertility rate (children/woman)",
+                         gridcolor=ct["gridcolor"], title_font=dict(color=ct["text_secondary"]))
+        return fig
+
+    @render_widget
+    def fertility_kmeans():
+        """Fig 4: K-Means clustering PCA projection with demographic winter detection."""
+        if open_story_id() != "fertility":
+            return go.Figure()
+        ct = _chart_theme()
+        km = story_kmeans_result()
+        if km["pca"] is None or len(km["labels"]) == 0:
+            return go.Figure()
+
+        pca = np.array(km["pca"])
+        labels = np.array(km["labels"])
+        isos_list = km["isos"]
+        k = km["k"]
+        target_isos = set(selected_story_isos())
+
+        # Cluster colors (distinct palette)
+        cluster_colors = [
+            "#818cf8", "#ef4444", "#10d97a", "#fbbf24", "#f97316",
+            "#22d3ee", "#fb7185", "#a78bfa",
+        ]
+
+        fig = go.Figure()
+
+        for cl in range(k):
+            mask = labels == cl
+            if not mask.any():
+                continue
+            cl_isos = set(isos_list[i] for i in range(len(isos_list)) if mask[i])
+            targets_in_cl = cl_isos & target_isos
+
+            # Non-target points in cluster
+            non_tgt_mask = np.array([isos_list[i] not in target_isos for i in range(len(isos_list)) if mask[i]])
+            cl_pca = pca[mask]
+            non_tgt_pca = cl_pca[non_tgt_mask] if non_tgt_mask.any() else np.empty((0, 2))
+
+            fig.add_scatter(
+                x=non_tgt_pca[:, 0] if len(non_tgt_pca) > 0 else [],
+                y=non_tgt_pca[:, 1] if len(non_tgt_pca) > 0 else [],
+                mode="markers",
+                name=f"Cluster {cl+1} ({len(cl_isos)} countries)",
+                marker=dict(color=cluster_colors[cl % len(cluster_colors)], size=8, opacity=0.55),
+                hoverinfo="skip",
+            )
+
+            # Target country points in cluster
+            for i, iso in enumerate(isos_list):
+                if mask[i] and iso in target_isos:
+                    fig.add_scatter(
+                        x=[pca[i, 0]], y=[pca[i, 1]],
+                        mode="markers+text",
+                        name=country_name(iso),
+                        marker=dict(color=cluster_colors[cl % len(cluster_colors)], size=18,
+                                    symbol="diamond",
+                                    line=dict(color="white" if theme.get() == "dark" else "#0f172a", width=2)),
+                        text=[country_name(iso)],
+                        textposition="top center",
+                        textfont=dict(size=11, color=ct["text_primary"]),
+                        hovertemplate="%{text}<extra></extra>",
+                        showlegend=False,
+                    )
+
+        fig.update_layout(
+            template=ct["template"],
+            title=f"K-Means Clustering (K={k}): Demographic Features PCA",
+            title_font=dict(size=14, color=ct["text_primary"]),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            height=440,
+            margin=dict(l=30, r=24, t=40, b=74),
+            legend=dict(orientation="h", yanchor="top", y=-0.18, xanchor="left", x=0,
+                        bgcolor=ct["legend_bg"], bordercolor=ct["gridcolor"],
+                        borderwidth=1, font=dict(color=ct["legend_font"], size=10)),
+        )
+        fig.update_xaxes(title_text="PC1", gridcolor=ct["gridcolor"],
+                         title_font=dict(color=ct["text_secondary"]))
+        fig.update_yaxes(title_text="PC2", gridcolor=ct["gridcolor"],
+                         title_font=dict(color=ct["text_secondary"]))
         return fig
 
 app = App(app_ui, server)
