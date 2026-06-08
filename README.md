@@ -6,7 +6,7 @@ GlobeVis is an interactive Python Shiny dashboard that turns global demographic 
 
 The dashboard was built for COMP4010 Project 2: Data Stories - Building Interactive Dashboards with Python Shiny.
 
-Live demo: `[ADD LIVE DEMO LINK HERE]`  
+Live demo: https://ntnhan201105.shinyapps.io/globevis/
 Repository: `https://github.com/ntnhan201105/COMP4010-Project-2`
 
 ## Project Overview
